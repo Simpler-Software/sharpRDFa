@@ -48,6 +48,12 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\sharpRDFa\sharpRDFa.csproj">
+      <Project>{B60B0A74-7626-4675-A182-C1B0830E6199}</Project>
+      <Name>sharpRDFa</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

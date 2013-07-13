@@ -54,6 +54,13 @@
       <Name>sharpRDFa</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Resource\alice-example.html" />
+    <Content Include="Resource\CharlesRobertDarwin.html" />
+    <Content Include="Resource\IMDB_The_Rock.html" />
+    <Content Include="Resource\XHTML+RDFa 1.0.html" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

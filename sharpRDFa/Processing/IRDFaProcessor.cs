@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using sharpRDFa.RDFa;
 
-namespace sharpRDFa
+namespace sharpRDFa.Processing
 {
     public interface IRDFaProcessor
     {
@@ -21,5 +19,7 @@ namespace sharpRDFa
         string SafeCURIEtoURI(string curie, Dictionary<string, string> uriMappings);
         string ResolveCURIE(string curie, string baseURI, Dictionary<string, string> uriMappings);
         string ResolveSafeCURIE(string curie, string baseURI, Dictionary<string, string> uriMappings);
+        string ResolveURI(string anURI, string baseURI);
+        string GetURISchema(string uri);
     }
 }

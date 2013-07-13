@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using NUnit.Framework;
+using sharpRDFa.Processing;
+using sharpRDFa.RDFa;
 
 namespace sharpRDFa.Tests
 {
@@ -109,7 +111,7 @@ namespace sharpRDFa.Tests
             // Arrange
 
             // Act
-            var result1 = _processor.GetURIParsed("http://example.org/john-d/?q=test");
+            var result1 = _processor.GetURIParsed("http://example.org/john-d/#me");
             var result2 = _processor.GetURIParsed("[dc:creator]");
 
             // Assert
@@ -117,7 +119,7 @@ namespace sharpRDFa.Tests
             Assert.AreEqual("http", result1.Scheme);
             Assert.AreEqual("example.org", result1.Authority);
             Assert.AreEqual("/john-d/", result1.Path);
-            Assert.AreEqual("q=test", result1.Query);
+            Assert.AreEqual("me", result1.Fragment);
             Assert.IsNull(result2);
         }
 
@@ -188,6 +190,19 @@ namespace sharpRDFa.Tests
             // Assert
             Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
         }
+
+        [Test]
+        public void ResolveURI_ValidInput_ReturnsExpectedResults()
+        {
+            // Arrange
+
+            // Act
+            string result = _processor.ResolveURI("http://example.org/john-d/", "http://example.org/john-d/");
+
+            // Assert
+            Assert.AreEqual("http://example.org/john-d/", result);
+
+        } 
 
         [Test]
         public void ResolveCURIE_ValidInput_ReturnsExpectedResults()

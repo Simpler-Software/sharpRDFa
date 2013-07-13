@@ -40,13 +40,19 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
-    <Compile Include="CURIE.cs" />
-    <Compile Include="IRDFaProcessor.cs" />
-    <Compile Include="NameSpace.cs" />
+    <Compile Include="RDFa\CURIE.cs" />
+    <Compile Include="Processing\IRDFaProcessor.cs" />
+    <Compile Include="RDFTriple\IRDFTripleBuilder.cs" />
+    <Compile Include="RDFa\NameSpace.cs" />
+    <Compile Include="RDFTriple\ObjectNode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RDFaProcessor.cs" />
-    <Compile Include="URI.cs" />
+    <Compile Include="Processing\RDFaProcessor.cs" />
+    <Compile Include="RDFTriple\RDFTriple.cs" />
+    <Compile Include="RDFTriple\RDFTripleBuilder.cs" />
+    <Compile Include="RDFTriple\TripleObjectType.cs" />
+    <Compile Include="RDFa\URI.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

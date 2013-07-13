@@ -1,4 +1,4 @@
-namespace sharpRDFa
+namespace sharpRDFa.RDFa
 {
     public class URI
     {

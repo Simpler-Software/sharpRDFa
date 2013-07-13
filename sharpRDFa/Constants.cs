@@ -142,7 +142,7 @@ namespace sharpRDFa
         /* '[' and ']' characters are excluded to distingish between safe curies and uris */
         public const string UriReference = "(?:(?:[^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\[\\]\\/\\?\\#]*))?(?:[^\\[\\]\\?\\#]*)(?:\\?(?:[^\\[\\]\\#]*))?(?:\\#(?:[^\\[\\]]*))?";
         public const string UriReferenceParsed = "(?:([^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/([^\\[\\]\\/\\?\\#]*))?([^\\[\\]\\?\\#]*)(?:\\?([^\\[\\]\\#]*))?(?:\\#([^\\[\\]]*))?";
-
+        public const string URISchema   = @"(?:([^\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\/\\?\#]*))?(?:[^\\?\\#]*)(?:\\?(?:[^\\#]*))?(?:\\#(?:.*))?";
         public const string ErrorHtmlAttributeNull = "HtmlAttribute can be null";
 
         public const string BnodePrefix = "rdfadevBnode";

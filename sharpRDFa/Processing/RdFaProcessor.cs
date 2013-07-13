@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using sharpRDFa.RDFa;
 
-namespace sharpRDFa
+namespace sharpRDFa.Processing
 {
     public class RDFaProcessor : IRDFaProcessor
     {
@@ -116,11 +117,11 @@ namespace sharpRDFa
                 if (regExResult.Count > 3)
                     result.Path = regExResult[3];
 
-                if (regExResult.Count > 4)
-                    result.Query = regExResult[4];
+                //if (regExResult.Count > 4)
+                //    result.Query = regExResult[4];
 
-                if (regExResult.Count > 5)
-                    result.Fragment = regExResult[5];
+                if (regExResult.Count > 4)
+                    result.Fragment = regExResult[4];
 
                 return result;
             }
@@ -280,7 +281,7 @@ namespace sharpRDFa
             return anURI != null ? ResolveURI(anURI, baseURI) : null;
         }
 
-        private string ResolveURI(string anURI, string baseURI)
+        public string ResolveURI(string anURI, string baseURI)
         {
             if (anURI == null) return null;
 
@@ -342,6 +343,14 @@ namespace sharpRDFa
             }
 
             return null;
+        }
+
+        public string GetURISchema(string uri)
+        {
+            const string uriExp = "^" + Constants.URISchema + "$";
+            if (uri == null) return null;
+            var resUriExp = MatchRegEx(uri, uriExp);
+            return resUriExp != null ? resUriExp[1] : null;
         }
 
         private static string RecomposeURIComponents(string scheme, string authority, string path, string query, string fragment)

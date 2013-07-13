@@ -81,41 +81,32 @@ namespace sharpRDFa
                 if (elementNode.HasAttribute("about") && elementNode.GetAttribute("about").IsUriOrSafeCurie(localUriMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("about").Value;
-                    //new_subject.elemento = elemento;
-                    //new_subject.attribute = "about";
                 }
                 else if (elementNode.HasAttribute("src") && elementNode.GetAttribute("src").IsUri().IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("src").Value;
-                    //new_subject.elemento = elemento;
                 }
                 else if (elementNode.HasAttribute("resource") && elementNode.GetAttribute("resource").IsUriOrSafeCurie(localUriMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("resource").Value;
-                    //new_subject.elemento = elemento;
-                    //new_subject.attribute = "resource";
                 }
                 else if (elementNode.HasAttribute("href") && elementNode.GetAttribute("href").IsUri().IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("href").Value;
-                    //new_subject.elemento = elemento;
                 }
                 else if ((elementNode.Name.ToUpper() == "HEAD") || (elementNode.Name.ToUpper() == "BODY"))
                 {
                     newSubject = "";
-                    //new_subject.elemento = elemento;
                 }
                 else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).Count > 0)
                 {
                     newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
-                    //new_subject.elemento = elemento;
                 }
                 else
                 {
                     if (!string.IsNullOrEmpty((context.ParentObject.Value as string)))
                     {
                         newSubject = context.ParentObject.Value;
-                        //new_subject_heredado = true;
                     }
                     if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings)).Count == 0)
                         skipElement = true;
@@ -126,40 +117,31 @@ namespace sharpRDFa
                 if (elementNode.GetAttribute("about").IsUriOrSafeCurie(localUriMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("about").Value;
-                    //new_subject.elemento = elemento;
-                    //new_subject.attribute = "about";
                 }
                 else if (elementNode.GetAttribute("src").IsUri().IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("src").Value;
-                    //new_subject.elemento = elemento;
                 }
                 else if ((elementNode.Name.ToUpper() == "HEAD") || (elementNode.Name.ToUpper() == "BODY"))
                 {
                     newSubject = "";
-                    //new_subject.elemento = elemento;
                 }
                 else if ((typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).IsNotNull() && typeAttributeList.Count > 0)
                 {
                     newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
-                    //new_subject.elemento = elemento;
                 }
                 else if (!string.IsNullOrEmpty(context.ParentObject.Value))
                 {
                     newSubject = context.ParentObject.Value;
-                    //new_subject_heredado = true;
                 }
 
                 if (elementNode.GetAttribute("resource").IsUriOrSafeCurie(localUriMappings).IsNotNull())
                 {
                     currentObjectResource = elementNode.GetAttribute("resource").Value;
-                    //current_object_resource.elemento = elemento;
-                    //current_object_resource.attribute = "resource";
                 }
                 else if (elementNode.GetAttribute("href").IsUri().IsNotNull())
                 {
                     currentObjectResource = elementNode.GetAttribute("href").Value;
-                    //current_object_resource.elemento = elemento;
                 }
             }
 
@@ -176,25 +158,11 @@ namespace sharpRDFa
                     foreach (var item in typeAttributeList)
                     {
                         subject = newSubject;
-                        //sujeto.elemento    = new_subject.elemento;
                         predicate = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
-                        //predicado.elemento = elemento;
                         objecto.Value = "[" + item.Curie + "]";
                         objecto.Type = TripleObjectType.URIorSafeCURIE;
 
-                        //new_subject.used              = true;
-
-                        //usedAttributes["typeof"].used = true;
-
-                        //if((new_subject_heredado != true) && (new_subject.attribute != null))
-                        //{
-                        //  usedAttributes[new_subject.attribute].used = true;
-                        //}
-
-                        //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
                         triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
-
-                        //this.hay_nuevas_tripletas = true;
                     }
                 }
             }
@@ -212,36 +180,18 @@ namespace sharpRDFa
                     foreach (var item in relAttributeList)
                     {
                         subject = newSubject;
-                        //sujeto.elemento = new_subject.elemento;
                         if (!string.IsNullOrEmpty(item))
                         {
                             predicate = "[" + item + "]";
-                            //predicado.elemento = elemento;
                         }
-                        //else
-                        //{
-                        //  predicado.value    = "http://www.w3.org/1999/xhtml/vocab#" + relAttributeList[i].reserved_word;
-                        //  predicado.elemento = elemento;
-                        //}
+                        else
+                        {
+                            predicate = "http://www.w3.org/1999/xhtml/vocab#" + item;
+                        }
                         objecto.Value = currentObjectResource;
                         objecto.Type = TripleObjectType.URIorSafeCURIE; 
 
-                        //new_subject.used = true;
-                        /*
-                        if((new_subject_heredado != true) && (new_subject.attribute != null))
-                        {
-                          usedAttributes[new_subject.attribute].used = true;
-                        }
-
-                        if(current_object_resource.attribute != null)
-                        {
-                          usedAttributes[current_object_resource.attribute].used = true;
-                        }*/
-
                         triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
-                        //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
-
-                        //this.hay_nuevas_tripletas = true;
                     }
                 }
                 if (revAttributeList.Count == 0)
@@ -258,32 +208,15 @@ namespace sharpRDFa
                         if (!string.IsNullOrEmpty(item))
                         {
                             predicate = "[" + item + "]";
-                            //predicado.elemento = elemento;
                         }
-                        //else
-                        //{
-                        //  predicado.value    = "http://www.w3.org/1999/xhtml/vocab#" + revAttributeList[i].reserved_word;
-                        //  predicado.elemento = elemento;
-                        //}
+                        else
+                        {
+                            predicate = "http://www.w3.org/1999/xhtml/vocab#" + item;
+                        }
 
                         subject = currentObjectResource;
-                        //sujeto.elemento = current_object_resource.elemento;
-
-                        //new_subject.used = true;
-                        /*
-                        if((new_subject_heredado != true) && (new_subject.attribute != null))
-                        {
-                          usedAttributes[new_subject.attribute].used = true;
-                        }        
-
-                        if(current_object_resource.attribute != null)
-                        {
-                          usedAttributes[current_object_resource.attribute].used = true;
-                        } */
-
-                        //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
+                        
                         triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
-                        //this.hay_nuevas_tripletas = true;
                     }
                 }
             }
@@ -367,7 +300,6 @@ namespace sharpRDFa
                         currentObjectLiteral = elementNode.GetChildrenText();
                         currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
                     }
-                    //current_object_literal.usedDatatypeAttribute = true;        
                 }
                 // plain literal 
                 else if (elementNode.HasAttribute("content"))
@@ -389,7 +321,6 @@ namespace sharpRDFa
                 {
                     currentObjectLiteral = elementNode.GetChildrenText();
                     currentObjectLiteralLanguage = currentLanguage;
-                    //current_object_literal.usedDatatypeAttribute = true;        
                 }
                 // XML literal 
                 else if (!elementNode.IsTextNode() &&
@@ -407,7 +338,6 @@ namespace sharpRDFa
                 {
                     currentObjectLiteral = elementNode.WriteContentTo(); ;
                     currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
-                    //currentObject.usedDatatypeAttribute = true;        
                     recurse = false;
                 }
 
@@ -416,31 +346,13 @@ namespace sharpRDFa
                     foreach (var item in propertyAttributeList)
                     {
                         subject = newSubject;
-                        //sujeto.elemento    = new_subject.elemento;
                         predicate = "[" + item.Curie + "]";
-                        //predicado.elemento = elemento;
                         objecto.Value = currentObjectLiteral;
                         objecto.DataType = currentObjectLiteralDataType;
                         objecto.Language = currentObjectLiteralLanguage;
                         objecto.Type = TripleObjectType.Literal;
 
-                        //usedAttributes["property"].used = true;
-
-                        //new_subject.used = true;
-
-                        //if((new_subject_heredado != true) && (new_subject.attribute != null))
-                        //{
-                        //  usedAttributes[new_subject.attribute].used = true;
-                        //}        
-
-                        //if(current_object_literal.usedDatatypeAttribute == true)
-                        //{
-                        //  usedAttributes["datatype"].used = true;
-                        //}
                         triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
-                        //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
-
-                        //this.hay_nuevas_tripletas = true;
                     }
                 }
             }
@@ -457,53 +369,22 @@ namespace sharpRDFa
                         if (incompleteTriple.Direction == "forward")
                         {
                             subject = context.ParentSubject;
-                            //sujeto.elemento              = contexto.parent_subject.elemento;
-                            //contexto.parent_subject.used = true;
                             predicate = incompleteTriple.Predicate;
-                            //predicado.elemento           = contexto.list_of_incomplete_triples[indice_tripleta].elemento; 
                             objecto.Value = newSubject;
                             objecto.Type = TripleObjectType.URIorSafeCURIE;
 
-                            //new_subject.used        = true;
-                            /*
-                        if((new_subject_heredado != true) && (new_subject.attribute != null))
-                        {
-                          usedAttributes[new_subject.attribute].used = true;
-                        }
-                         */
-
                             triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
-                            //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
-
-                            //this.hay_nuevas_tripletas = true;
-
-                            //contexto.list_of_incomplete_triples[indice_tripleta].completed = true;
+                            
                         }
                         else if (incompleteTriple.Direction == "reverse")
                         {
                             objecto.Value = context.ParentSubject;
                             objecto.Type = TripleObjectType.URIorSafeCURIE;
-                            //contexto.parent_subject.used = true;        
                             predicate = incompleteTriple.Predicate;
-                            //predicado.elemento           = contexto.list_of_incomplete_triples[indice_tripleta].elemento;
                             subject = newSubject;
-                            //sujeto.elemento              = new_subject.elemento;
-
-                            //new_subject.used        = true;
-
-                            /*
-                      if((new_subject_heredado != true) && (new_subject.attribute != null))
-                      {
-                        usedAttributes[new_subject.attribute].used = true;
-                      }*/
 
                             triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
 
-                            //this.formaTripleta(elemento, sujeto, predicado, objeto, local_list_of_URI_mappings, contexto.base, bodyElement, errores_elemento);
-
-                            //this.hay_nuevas_tripletas = true;
-
-                            //contexto.list_of_incomplete_triples[indice_tripleta].completed = true;
                         }
                     }
             }
@@ -543,7 +424,6 @@ namespace sharpRDFa
                         context.UriMappings = localUriMappings;
                         //nuevo_contexto.list_of_incomplete_triples = local_list_of_incomplete_triples;
                         context.Language = currentLanguage;
-                        //nuevo_contexto.bodyElement                = bodyElement;
                     }
 
                     Parse(context, currentElement, ref triples);

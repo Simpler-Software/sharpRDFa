@@ -1,4 +1,4 @@
-﻿namespace sharpRDFa.RDFTriple
+﻿namespace sharpRDFa.RDF
 {
     /*
      The subject denotes the resource, and the predicate denotes traits or aspects of the resource

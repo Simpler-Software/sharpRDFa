@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using sharpRDFa.Processing;
 using sharpRDFa.RDFa;
 
-namespace sharpRDFa.RDFTriple
+namespace sharpRDFa.RDF
 {
     public class RDFTripleBuilder : IRDFTripleBuilder
     {
@@ -15,7 +15,7 @@ namespace sharpRDFa.RDFTriple
             _processor = new RDFaProcessor();
         }
 
-        public void CreateSubject(string resource, string baseURL, Dictionary<string, string> uriMappings)
+        public void CreateSubject(string resource, string baseURL, IDictionary<string, string> uriMappings)
         {
             string subject = null;
 
@@ -47,7 +47,7 @@ namespace sharpRDFa.RDFTriple
             _rdfTriple.Subject = subject;
         }
 
-        public void CreatePredicate(string property, string baseURL, Dictionary<string, string> uriMappings)
+        public void CreatePredicate(string property, string baseURL, IDictionary<string, string> uriMappings)
         {
             string predicate = null;
             var predicateSafeCURIE = _processor.IsSafeCURIE(property, uriMappings);
@@ -80,7 +80,7 @@ namespace sharpRDFa.RDFTriple
             _rdfTriple.Predicate = predicate;
         }
 
-        public void CreateObject(string objectValue, string language, string dataType, TripleObjectType type, string baseURL, Dictionary<string, string> uriMappings)
+        public void CreateObject(string objectValue, string language, string dataType, TripleObjectType type, string baseURL, IDictionary<string, string> uriMappings)
         {
             var newObject = new ObjectNode();
 

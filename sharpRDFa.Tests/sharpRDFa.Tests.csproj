@@ -42,9 +42,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="RDFaParserTests.cs" />
     <Compile Include="RDFaProcessorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDFTripleBuilderTests.cs" />
+    <Compile Include="VocabularyTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

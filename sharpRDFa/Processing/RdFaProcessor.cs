@@ -34,7 +34,7 @@ namespace sharpRDFa.Processing
             return result;
         }
 
-        public CURIE IsCURIE(string input, Dictionary<string, string> uriMappings)
+        public CURIE IsCURIE(string input, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
             const string curieExp = "^" + Constants.Curie + "$";
@@ -60,7 +60,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public CURIE IsSafeCURIE(string input, Dictionary<string, string> uriMappings)
+        public CURIE IsSafeCURIE(string input, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
             const string curieExp = "^\\[(" + Constants.Curie + ")\\]$";
@@ -129,7 +129,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public object IsUriOrSafeCurie(string input, Dictionary<string, string> uriMappings, string attributeName)
+        public object IsUriOrSafeCurie(string input, IDictionary<string, string> uriMappings, string attributeName)
         {
             if (input == null)
             {
@@ -169,7 +169,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public object IsReservedWordOrCurie(string input, Dictionary<string, string> uriMappings)
+        public object IsReservedWordOrCurie(string input, IDictionary<string, string> uriMappings)
         {
             if (input == null)
             {
@@ -193,7 +193,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public IList<CURIE> GetCURIEs(string attributeValue, Dictionary<string, string> uriMappings)
+        public IList<CURIE> GetCURIEs(string attributeValue, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(attributeValue)) return null;
 
@@ -207,7 +207,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public string CURIEtoURI(string curie, Dictionary<string, string> uriMappings)
+        public string CURIEtoURI(string curie, IDictionary<string, string> uriMappings)
         {
             var resCurie = IsCURIE(curie, uriMappings);
             var resURI = "";
@@ -238,7 +238,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public string SafeCURIEtoURI(string aSafeCurie, Dictionary<string, string> uriMappings)
+        public string SafeCURIEtoURI(string aSafeCurie, IDictionary<string, string> uriMappings)
         {
             var resSafeCurie = IsSafeCURIE(aSafeCurie, uriMappings);
             var resURI = "";
@@ -269,13 +269,13 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public string ResolveCURIE(string aCurie, string baseURI, Dictionary<string, string> uriMappings)
+        public string ResolveCURIE(string aCurie, string baseURI, IDictionary<string, string> uriMappings)
         {
             var anURI = CURIEtoURI(aCurie, uriMappings);
             return anURI != null ? ResolveURI(anURI, baseURI) : null;
         }
 
-        public string ResolveSafeCURIE(string aCurie, string baseURI, Dictionary<string, string> uriMappings)
+        public string ResolveSafeCURIE(string aCurie, string baseURI, IDictionary<string, string> uriMappings)
         {
             var anURI = SafeCURIEtoURI(aCurie, uriMappings);
             return anURI != null ? ResolveURI(anURI, baseURI) : null;
@@ -387,6 +387,7 @@ namespace sharpRDFa.Processing
 
         private static string RemoveDotSegments(string path)
         {
+            if (string.IsNullOrEmpty(path)) return null;
             var result = path;
             string previousResult;
 

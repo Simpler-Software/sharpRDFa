@@ -1,44 +1,40 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace sharpRDFa.Tests
 {
     [TestFixture]
-    public class IRDFaProcessorTests
+    public class RDFaProcessorTests
     {
         [Test]
-        public void IsNameSpace_Test1()
+        public void IsNameSpace_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
 
             // Act
             var result = processor.IsNameSpace("xmlns:foaf");
+            
             // Assert
-
             Assert.AreEqual("xmlns", result.Prefix);
             Assert.AreEqual("foaf", result.NCName);
         }
 
         [Test]
-        public void IsNameSpace_Test2()
+        public void IsNameSpace_InvalidInput_ReturnsNull()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
 
             // Act
             var result = processor.IsNameSpace("xmlns");
+            
             // Assert
-
             Assert.IsNull(result);
         }
 
         [Test]
-        public void IsCURIE_Test1()
+        public void IsCURIE_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -57,7 +53,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void IsSafeCURIE_Test1()
+        public void IsSafeCURIE_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -76,7 +72,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void IsURI_Test1()
+        public void IsURI_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -92,7 +88,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void IsUriOrSafeCurie_Test1()
+        public void IsUriOrSafeCurie_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -114,7 +110,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void GetURIParsed_Test1()
+        public void GetURIParsed_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -133,7 +129,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void IsReservedWord_Test1()
+        public void IsReservedWord_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -141,14 +137,14 @@ namespace sharpRDFa.Tests
             // Act
             var result1 = processor.IsReservedWord("meta");
             var result2 = processor.IsReservedWord("not_reserved_word");
+            
             // Assert
-
             Assert.IsNotNull(result1);
             Assert.IsNull(result2);
         }
 
         [Test]
-        public void IsReservedWordOrCurie_Test1()
+        public void IsReservedWordOrCurie_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -161,8 +157,8 @@ namespace sharpRDFa.Tests
             var result1 = processor.IsReservedWordOrCurie("meta", uriMappings);
             var result2 = processor.IsReservedWordOrCurie("dc:creator", uriMappings);
             var result3 = processor.IsReservedWordOrCurie("not_reserved_word", uriMappings);
+            
             // Assert
-
             Assert.IsNotNull(result1);
             Assert.IsNotNull(result2);
             Assert.IsNull(result3);
@@ -170,7 +166,7 @@ namespace sharpRDFa.Tests
         }
 
         [Test]
-        public void GetCURIEs_Test1()
+        public void GetCURIEs_ValidInput_ReturnsExpectedResults()
         {
             // Arrange
             IRDFaProcessor processor = new RDFaProcessor();
@@ -179,11 +175,91 @@ namespace sharpRDFa.Tests
                                       {"foaf", "http://xmlns.com/foaf/0.1/"},
                                       {"dc", "http://purl.org/dc/elements/1.1/"}
                                   };
+            
             // Act
-            //var result = processor.GetCURIEs("dc:creator", uriMappings);
+            IList<CURIE> result = processor.GetCURIEs("dc:creator", uriMappings);
 
             // Assert
-
+            Assert.IsTrue(result.Count > 0);
+            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual("dc:creator", result[0].Curie);
         }
+
+        [Test]
+        public void CURIEtoURI_ValidInput_ReturnsExpectedResults()
+        {
+            // Arrange
+            IRDFaProcessor processor = new RDFaProcessor();
+            var uriMappings = new Dictionary<string, string>
+                                  {
+                                      {"foaf", "http://xmlns.com/foaf/0.1/"},
+                                      {"dc", "http://purl.org/dc/elements/1.1/"}
+                                  };
+
+            
+            // Act
+            string result = processor.CURIEtoURI("dc:creator", uriMappings);
+            
+            // Assert
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
+        }
+
+        [Test]
+        public void SafeCURIEtoURI_ValidInput_ReturnsExpectedResults()
+        {
+            // Arrange
+            IRDFaProcessor processor = new RDFaProcessor();
+            var uriMappings = new Dictionary<string, string>
+                                  {
+                                      {"foaf", "http://xmlns.com/foaf/0.1/"},
+                                      {"dc", "http://purl.org/dc/elements/1.1/"}
+                                  };
+
+
+            // Act
+            string result = processor.SafeCURIEtoURI("[dc:creator]", uriMappings);
+
+            // Assert
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
+        }
+
+        [Test]
+        public void ResolveCURIE_ValidInput_ReturnsExpectedResults()
+        {
+            // Arrange
+            IRDFaProcessor processor = new RDFaProcessor();
+            var uriMappings = new Dictionary<string, string>
+                                  {
+                                      {"foaf", "http://xmlns.com/foaf/0.1/"},
+                                      {"dc", "http://purl.org/dc/elements/1.1/"},
+                                      {"xsd","http://www.w3.org/2001/XMLSchema#"}
+                                  };
+
+            // Act
+            string result = processor.ResolveCURIE("dc:creator", "http://example.org/john-d/", uriMappings);
+            
+            // Assert
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
+        }
+
+        [Test]
+        public void ResolveSafeCURIE_ValidInput_ReturnsExpectedResults()
+        {
+            // Arrange
+            IRDFaProcessor processor = new RDFaProcessor();
+            var uriMappings = new Dictionary<string, string>
+                                  {
+                                      {"foaf", "http://xmlns.com/foaf/0.1/"},
+                                      {"dc", "http://purl.org/dc/elements/1.1/"},
+                                      {"xsd","http://www.w3.org/2001/XMLSchema#"}
+                                  };
+
+            // Act
+            string result = processor.ResolveSafeCURIE("[dc:creator]", "http://example.org/john-d/", uriMappings);
+
+            // Assert
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
+
+        } 
     }
 }

@@ -16,6 +16,10 @@ namespace sharpRDFa
         object IsUriOrSafeCurie(string attributeValue, Dictionary<string, string> uriMappings, string attributeName);
         string IsReservedWord(string attributeValue);
         object IsReservedWordOrCurie(string attributeValue, Dictionary<string, string> uriMappings);
-        void GetCURIEs(string attributeValue, Dictionary<string, string> uriMappings);
+        IList<CURIE> GetCURIEs(string attributeValue, Dictionary<string, string> uriMappings);
+        string CURIEtoURI(string curie, Dictionary<string, string> uriMappings);
+        string SafeCURIEtoURI(string curie, Dictionary<string, string> uriMappings);
+        string ResolveCURIE(string curie, string baseURI, Dictionary<string, string> uriMappings);
+        string ResolveSafeCURIE(string curie, string baseURI, Dictionary<string, string> uriMappings);
     }
 }

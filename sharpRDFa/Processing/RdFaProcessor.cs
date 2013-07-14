@@ -38,6 +38,7 @@ namespace sharpRDFa.Processing
         {
             if (string.IsNullOrEmpty(input)) return null;
             const string curieExp = "^" + Constants.Curie + "$";
+            //const string curieExp = "^(\\w*?):(.*)$";
             var regExResult = MatchRegEx(input, curieExp);
 
             if ((regExResult != null) && (regExResult[2] != null) && (regExResult[2] != "_"))

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using sharpRDFa.Extension;
 using sharpRDFa.RDF;
@@ -66,19 +67,19 @@ namespace sharpRDFa
             string currentObjectLiteralDataType = null;
             string currentObjectLiteralLanguage = null;
             var localIncompleteTriples = new List<IncompleteTriple>();
-            IDictionary<string, string> localUriMappings = null;
+            IDictionary<string, string> prefixMappings = null;
             string currentLanguage = null;
             
             //Step 2 update uri mappings
-            localUriMappings = UpdateUriMappings(context, elementNode);
+            prefixMappings = UpdatePrefixMappings(context, elementNode);
 
             //Step 3 set current language
-            currentLanguage = string.IsNullOrEmpty(elementNode.GetLanguage()) ? context.Language : elementNode.GetLanguage();
-
+            currentLanguage = UpdateLanguage(context, elementNode); 
+            
             //Step 4 of the processing sequence
             if (!elementNode.HasAttribute("rel") && !elementNode.HasAttribute("rev"))
             {
-                if (elementNode.HasAttribute("about") && elementNode.GetAttribute("about").IsUriOrSafeCurie(localUriMappings).IsNotNull())
+                if (elementNode.HasAttribute("about") && elementNode.GetAttribute("about").IsUriOrSafeCurie(prefixMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("about").Value;
                 }
@@ -86,7 +87,7 @@ namespace sharpRDFa
                 {
                     newSubject = elementNode.GetAttribute("src").Value;
                 }
-                else if (elementNode.HasAttribute("resource") && elementNode.GetAttribute("resource").IsUriOrSafeCurie(localUriMappings).IsNotNull())
+                else if (elementNode.HasAttribute("resource") && elementNode.GetAttribute("resource").IsUriOrSafeCurie(prefixMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("resource").Value;
                 }
@@ -98,7 +99,7 @@ namespace sharpRDFa
                 {
                     newSubject = "";
                 }
-                else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).IsNotNull() && typeAttributeList.Count > 0)
+                else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(prefixMappings)).IsNotNull() && typeAttributeList.Count > 0)
                 {
                     newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
                 }
@@ -108,13 +109,13 @@ namespace sharpRDFa
                     {
                         newSubject = context.ParentObject.Value;
                     }
-                    if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings)).IsNull())
+                    if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(prefixMappings)).IsNull())
                         skipElement = true;
                 }
             }
             else //Step 5 of the processing sequence
             {
-                if (elementNode.GetAttribute("about").IsUriOrSafeCurie(localUriMappings).IsNotNull())
+                if (elementNode.GetAttribute("about").IsUriOrSafeCurie(prefixMappings).IsNotNull())
                 {
                     newSubject = elementNode.GetAttribute("about").Value;
                 }
@@ -126,7 +127,7 @@ namespace sharpRDFa
                 {
                     newSubject = "";
                 }
-                else if ((typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).IsNotNull() && typeAttributeList.Count > 0)
+                else if ((typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(prefixMappings)).IsNotNull() && typeAttributeList.Count > 0)
                 {
                     newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
                 }
@@ -135,7 +136,7 @@ namespace sharpRDFa
                     newSubject = context.ParentObject.Value;
                 }
 
-                if (elementNode.GetAttribute("resource").IsUriOrSafeCurie(localUriMappings).IsNotNull())
+                if (elementNode.GetAttribute("resource").IsUriOrSafeCurie(prefixMappings).IsNotNull())
                 {
                     currentObjectResource = elementNode.GetAttribute("resource").Value;
                 }
@@ -151,7 +152,7 @@ namespace sharpRDFa
                 if (typeAttributeList.IsNull() || typeAttributeList.Count == 0)
                 {
                     if (elementNode.HasAttribute("typeof"))
-                        typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings);
+                        typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(prefixMappings);
                 }
                 if (typeAttributeList.IsNotNull() && typeAttributeList.Count > 0)
                 {
@@ -162,7 +163,7 @@ namespace sharpRDFa
                         objecto.Value = "[" + item.Curie + "]";
                         objecto.Type = TripleObjectType.URIorSafeCURIE;
 
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
                     }
                 }
             }
@@ -173,7 +174,7 @@ namespace sharpRDFa
                 if (relAttributeList.Count == 0)
                 {
                     if (elementNode.HasAttribute("rel"))
-                        relAttributeList.Add(elementNode.GetAttribute("rel").GetReservedWordOrCURIE(localUriMappings));
+                        relAttributeList.Add(elementNode.GetAttribute("rel").GetReservedWordOrCURIE(prefixMappings));
                 }
                 if (relAttributeList.Count > 0)
                 {
@@ -191,13 +192,13 @@ namespace sharpRDFa
                         objecto.Value = currentObjectResource;
                         objecto.Type = TripleObjectType.URIorSafeCURIE; 
 
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
                     }
                 }
                 if (revAttributeList.Count == 0)
                 {
                     if (elementNode.HasAttribute("rev"))
-                        revAttributeList.Add(elementNode.GetAttribute("rev").GetReservedWordOrCURIE(localUriMappings));
+                        revAttributeList.Add(elementNode.GetAttribute("rev").GetReservedWordOrCURIE(prefixMappings));
                 }
                 if (revAttributeList.Count > 0)
                 {
@@ -216,7 +217,7 @@ namespace sharpRDFa
 
                         subject = currentObjectResource;
                         
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
                     }
                 }
             }
@@ -228,7 +229,7 @@ namespace sharpRDFa
                 if (relAttributeList.Count == 0)
                 {
                     if (elementNode.HasAttribute("rel"))
-                        relAttributeList.Add(elementNode.GetAttribute("rel").GetReservedWordOrCURIE(localUriMappings));
+                        relAttributeList.Add(elementNode.GetAttribute("rel").GetReservedWordOrCURIE(prefixMappings));
                 }
                 if (relAttributeList.Count > 0)
                 {
@@ -249,7 +250,7 @@ namespace sharpRDFa
                 if (revAttributeList.Count == 0)
                 {
                     if (elementNode.HasAttribute("rev"))
-                        revAttributeList.Add(elementNode.GetAttribute("rev").GetReservedWordOrCURIE(localUriMappings));
+                        revAttributeList.Add(elementNode.GetAttribute("rev").GetReservedWordOrCURIE(prefixMappings));
                 }
                 if (revAttributeList.Count > 0)
                 {
@@ -280,15 +281,15 @@ namespace sharpRDFa
             if (propertyAttributeList.IsNull() || propertyAttributeList.Count == 0)
             {
                 if (elementNode.HasAttribute("property"))
-                    propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings);
+                    propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(prefixMappings);
             }
             if (propertyAttributeList.IsNotNull() && propertyAttributeList.Count > 0)
             {
                 // typed literal 
                 if (elementNode.HasAttribute("datatype") &&
                    !string.IsNullOrEmpty(elementNode.GetAttribute("datatype").Value) &&
-                   elementNode.GetAttribute("datatype").IsCurie(localUriMappings).IsNotNull() &&
-                   elementNode.GetAttribute("datatype").ResolveCURIE(context.Base as string, localUriMappings) != "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
+                   elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull() &&
+                   elementNode.GetAttribute("datatype").ResolveCURIE(context.Base as string, prefixMappings) != "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
                 {
                     if (elementNode.HasAttribute("content"))
                     {
@@ -325,7 +326,7 @@ namespace sharpRDFa
                 // XML literal 
                 else if (!elementNode.IsTextNode() &&
                         elementNode.HasAttribute("datatype") ||
-                        elementNode.GetAttribute("datatype").IsCurie(localUriMappings).IsNotNull())
+                        elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull())
                 {
                     currentObjectLiteral = elementNode.WriteContentTo();
                     currentObjectLiteralDataType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral";
@@ -333,8 +334,8 @@ namespace sharpRDFa
                 }
                 else if (!elementNode.IsTextNode() &&
                     elementNode.HasAttribute("datatype") &&
-                        elementNode.GetAttribute("datatype").IsCurie(localUriMappings).IsNotNull() &&
-                        elementNode.GetAttribute("datatype").ResolveCURIE(context.Base, localUriMappings) == "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
+                        elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull() &&
+                        elementNode.GetAttribute("datatype").ResolveCURIE(context.Base, prefixMappings) == "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
                 {
                     currentObjectLiteral = elementNode.WriteContentTo(); ;
                     currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
@@ -352,7 +353,7 @@ namespace sharpRDFa
                         objecto.Language = currentObjectLiteralLanguage;
                         objecto.Type = TripleObjectType.Literal;
 
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
                     }
                 }
             }
@@ -373,7 +374,7 @@ namespace sharpRDFa
                             objecto.Value = newSubject;
                             objecto.Type = TripleObjectType.URIorSafeCURIE;
 
-                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
                             
                         }
                         else if (incompleteTriple.Direction == "reverse")
@@ -383,7 +384,7 @@ namespace sharpRDFa
                             predicate = incompleteTriple.Predicate;
                             subject = newSubject;
 
-                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, localUriMappings));
+                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, prefixMappings));
 
                         }
                     }
@@ -396,8 +397,8 @@ namespace sharpRDFa
                 {
                     if (skipElement)
                     {
-                        context.Language = currentLanguage;
-                        context.UriMappings = localUriMappings;
+                        //context.Language = currentLanguage;
+                        //context.PrefixMappings = prefixMappings;
                     }
                     else
                     {
@@ -421,15 +422,24 @@ namespace sharpRDFa
                         {
                             //nuevo_contexto.parent_object   = contexto.parent_subject;
                         }
-                        context.UriMappings = localUriMappings;
+                        //context.PrefixMappings = prefixMappings;
                         //nuevo_contexto.list_of_incomplete_triples = local_list_of_incomplete_triples;
-                        context.Language = currentLanguage;
+                        //context.Language = currentLanguage;
                     }
 
                     Parse(context, currentElement, ref triples);
 
                 }
             }
+        }
+
+        private string UpdateLanguage(ParserContext context, HtmlNode elementNode)
+        {
+            var language = string.IsNullOrEmpty(elementNode.GetLanguage())
+                               ? context.Language
+                               : elementNode.GetLanguage();
+            context.Language = language;
+            return language;
         }
 
         private HtmlNode GetDocumentRootElement(HtmlDocument document)
@@ -458,11 +468,23 @@ namespace sharpRDFa
             parserContext.Base = baseURI;
             parserContext.ParentSubject = baseURI;
             parserContext.ParentObject = new ObjectNode();
-            parserContext.UriMappings = new Dictionary<string, string>();
+            parserContext.PrefixMappings = GetDocNamespaces(document);
             parserContext.IncompleteTriples = new List<IncompleteTriple>();
             parserContext.Language = null;
 
             return parserContext;
+        }
+
+        public IDictionary<string, string> GetDocNamespaces(HtmlDocument document)
+        {
+            var mappings = new Dictionary<string, string>();
+            var rootElement = GetDocumentRootElement(document);
+            foreach (var source in rootElement.GetNameSpaceMappings())
+            {
+                if (!mappings.ContainsKey(source.Key))
+                    mappings.Add(source.Key, source.Value);        
+            }
+            return mappings;
         }
 
         public string GetBaseURI(HtmlDocument document)
@@ -487,21 +509,36 @@ namespace sharpRDFa
             return new Exception(CommonResource.ParserError_InvalidHtmlRootElement);
         }
 
-        public IDictionary<string, string> UpdateUriMappings(ParserContext context, HtmlNode elementNode)
-        {
-            var mappings = new Dictionary<string, string>(context.UriMappings);
-            foreach (var source in elementNode.GetNameSpaceMappings())
+        public IDictionary<string, string> UpdatePrefixMappings(ParserContext context, HtmlNode elementNode)
+        {      
+            if(elementNode.HasAttribute("prefix"))
             {
-                if (!mappings.ContainsKey(source.Key))
-                    mappings.Add(source.Key, source.Value);
-                else if (!string.Equals(mappings[source.Key], source.Value))
+                var mappings = new Dictionary<string, string>(context.PrefixMappings);
+
+                string[] splits = Regex.Split(elementNode.GetAttribute("prefix").Value, "\\s+");
+                int i = 0;
+                while (i < splits.Length)
                 {
-                    mappings.Remove(source.Key);
-                    mappings.Add(source.Key, source.Value);
+                    var prefix = splits[i].Split(':')[0];
+                    var url = splits[i + 1];
+
+                    if (prefix == "_")
+                    {
+                        continue;
+                    }
+                    if (!string.IsNullOrEmpty(prefix) && !mappings.ContainsKey(prefix))
+                    {
+                        mappings.Add(prefix, url);
+                    }
+
+                    i += 2;
                 }
+
+                if(mappings.Count > context.PrefixMappings.Count)
+                    context.PrefixMappings = mappings;
+
             }
-            context.UriMappings = mappings;
-            return mappings;
+            return context.PrefixMappings;
         }
 
         private bool ShouldParse(HtmlNode elementNode)

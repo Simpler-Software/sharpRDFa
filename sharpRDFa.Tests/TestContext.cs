@@ -29,7 +29,7 @@ namespace sharpRDFa.Tests
 
         public ParserContext GetParserContext()
         {
-            var context = new ParserContext { UriMappings = new Dictionary<string, string>() };
+            var context = new ParserContext { PrefixMappings = new Dictionary<string, string>() };
             return context;
         }
     }

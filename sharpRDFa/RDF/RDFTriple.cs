@@ -12,5 +12,15 @@
         public string Predicate { get; set; }
         public ObjectNode Object { get; set; }
 
+        public string Objecto
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Object.Uri)) return Object.Uri;
+                if (!string.IsNullOrEmpty(Object.Literal)) return Object.Literal;
+                return null;
+            }
+        }
+
     }
 }

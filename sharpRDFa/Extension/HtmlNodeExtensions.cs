@@ -65,5 +65,13 @@ namespace sharpRDFa.Extension
 
             return result;
         }
+
+        public static string GetXPATHAttributeValue(this HtmlNode element, string xPath, string attributeName)
+        {
+            HtmlNode node = element.SelectSingleNode(xPath);
+            if (node.IsNotNull() && node.Attributes[attributeName].IsNotNull())
+                return node.Attributes[attributeName].Value;
+            return string.Empty;
+        }        
     }
 }

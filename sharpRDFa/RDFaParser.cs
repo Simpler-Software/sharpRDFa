@@ -10,13 +10,13 @@ namespace sharpRDFa
 {
     public class RDFaParser : IRDFaParser
     {
-        private readonly IDictionary<string, string> _commonPrefixes;
+        //private readonly IDictionary<string, string> _commonPrefixes;
         private decimal _bnodes;
 
-        public RDFaParser()
-        {
-            _commonPrefixes = Vocabulary.GetCommonPrefixes();
-        }
+        //public RDFaParser()
+        //{
+        //    _commonPrefixes = Vocabulary.GetCommonPrefixes();
+        //}
 
         public IList<RDFTriple> GetRDFTriplesFromURL(string url)
         {
@@ -38,7 +38,7 @@ namespace sharpRDFa
             if (rootElement == null || rootElement.Name.ToUpper() != "HTML")
                 throw ParserErrorHtmlRootElementException();
             
-            ParserContext context = SetupContext(document);
+            ParserContext context = InitializeContext(document);
             _bnodes = 0;
             Parse(context, rootElement, ref triples);
             return triples;
@@ -57,7 +57,7 @@ namespace sharpRDFa
             string predicate = null;
             var objecto = new ObjectNode();
 
-            //Step 1 of the processing sequence
+            // Step 1: Establish local variables
             bool recurse = true;
             bool skipElement = false;
             string newSubject = context.ParentSubject;
@@ -65,15 +65,15 @@ namespace sharpRDFa
             string currentObjectResource = null;
             string currentObjectLiteralDataType = null;
             string currentObjectLiteralLanguage = null;
-
-            var newUriMappings = new List<string>();
             var localIncompleteTriples = new List<IncompleteTriple>();
+            IDictionary<string, string> localUriMappings = null;
+            string currentLanguage = null;
+            
+            //Step 2 update uri mappings
+            localUriMappings = UpdateUriMappings(context, elementNode);
 
-            //Step 2 of the processing sequence
-            var localUriMappings = UpdateUriMappings(context, elementNode, ref newUriMappings);
-
-            //Step 3 of the processing sequence
-            var currentLanguage = string.IsNullOrEmpty(elementNode.GetLanguage()) ? context.Language : elementNode.GetLanguage();
+            //Step 3 set current language
+            currentLanguage = string.IsNullOrEmpty(elementNode.GetLanguage()) ? context.Language : elementNode.GetLanguage();
 
             //Step 4 of the processing sequence
             if (!elementNode.HasAttribute("rel") && !elementNode.HasAttribute("rev"))
@@ -98,7 +98,7 @@ namespace sharpRDFa
                 {
                     newSubject = "";
                 }
-                else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).Count > 0)
+                else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(localUriMappings)).IsNotNull() && typeAttributeList.Count > 0)
                 {
                     newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
                 }
@@ -108,7 +108,7 @@ namespace sharpRDFa
                     {
                         newSubject = context.ParentObject.Value;
                     }
-                    if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings)).Count == 0)
+                    if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings)).IsNull())
                         skipElement = true;
                 }
             }
@@ -277,12 +277,12 @@ namespace sharpRDFa
 
 
             // Paso 9 de la secuencia de procesamiento
-            if (propertyAttributeList.Count == 0)
+            if (propertyAttributeList.IsNull() || propertyAttributeList.Count == 0)
             {
                 if (elementNode.HasAttribute("property"))
                     propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(localUriMappings);
             }
-            if (propertyAttributeList.Count > 0)
+            if (propertyAttributeList.IsNotNull() && propertyAttributeList.Count > 0)
             {
                 // typed literal 
                 if (elementNode.HasAttribute("datatype") &&
@@ -450,13 +450,13 @@ namespace sharpRDFa
             return document;
         }
 
-        private ParserContext SetupContext(HtmlDocument document)
+        private ParserContext InitializeContext(HtmlDocument document)
         {
             var parserContext = new ParserContext();
 
-            var baseValue = GetBase(document);
-            parserContext.Base = baseValue;
-            parserContext.ParentSubject = baseValue;
+            var baseURI = GetBaseURI(document);
+            parserContext.Base = baseURI;
+            parserContext.ParentSubject = baseURI;
             parserContext.ParentObject = new ObjectNode();
             parserContext.UriMappings = new Dictionary<string, string>();
             parserContext.IncompleteTriples = new List<IncompleteTriple>();
@@ -465,14 +465,21 @@ namespace sharpRDFa
             return parserContext;
         }
 
-        private string GetBase(HtmlDocument document)
+        public string GetBaseURI(HtmlDocument document)
         {
             var rootElement = GetDocumentRootElement(document);
             if (rootElement.IsNull()) return string.Empty;
-            var baseNode = rootElement.SelectSingleNode("//base");
-            if (baseNode.IsNotNull() && baseNode.Attributes["href"].IsNotNull())
-                return baseNode.Attributes["href"].Value;
-            return string.Empty;
+
+            string baseURI = null;
+            var xpaths = new[]{"//html", "//head", "//base"};
+
+            foreach (var xpath in xpaths)
+            {
+                baseURI = rootElement.GetXPATHAttributeValue(xpath, "href");
+                if (!string.IsNullOrEmpty(baseURI)) return baseURI;
+            }
+
+            return baseURI;
         }
 
         private Exception ParserErrorHtmlRootElementException()
@@ -480,16 +487,21 @@ namespace sharpRDFa
             return new Exception(CommonResource.ParserError_InvalidHtmlRootElement);
         }
 
-        public IDictionary<string, string> UpdateUriMappings(ParserContext context, HtmlNode elementNode, ref List<string> newUriMappings)
+        public IDictionary<string, string> UpdateUriMappings(ParserContext context, HtmlNode elementNode)
         {
-            var localUriMappings = new Dictionary<string, string>(context.UriMappings);
+            var mappings = new Dictionary<string, string>(context.UriMappings);
             foreach (var source in elementNode.GetNameSpaceMappings())
             {
-                localUriMappings.Add(source.Key, source.Value);
-                newUriMappings.Add(source.Key);
+                if (!mappings.ContainsKey(source.Key))
+                    mappings.Add(source.Key, source.Value);
+                else if (!string.Equals(mappings[source.Key], source.Value))
+                {
+                    mappings.Remove(source.Key);
+                    mappings.Add(source.Key, source.Value);
+                }
             }
-
-            return localUriMappings;
+            context.UriMappings = mappings;
+            return mappings;
         }
 
         private bool ShouldParse(HtmlNode elementNode)

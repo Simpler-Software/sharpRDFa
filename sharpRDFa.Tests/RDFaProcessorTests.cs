@@ -54,7 +54,7 @@ namespace sharpRDFa.Tests
             // Arrange
             
             // Act
-            var result = _processor.IsCURIE("dc:creator", _uriMappings);
+            var result = _processor.IsCURIE("dc:creator", null, _uriMappings);
 
             // Assert
             Assert.AreEqual("dc:creator", result.Curie);
@@ -68,7 +68,7 @@ namespace sharpRDFa.Tests
             // Arrange
 
             // Act
-            var result = _processor.IsSafeCURIE("[dc:creator]", _uriMappings);
+            var result = _processor.IsSafeCURIE("[dc:creator]", null, _uriMappings);
 
             // Assert
             Assert.AreEqual("dc:creator", result.Curie);
@@ -97,8 +97,8 @@ namespace sharpRDFa.Tests
             // Arrange
 
             // Act
-            var result1 = _processor.IsUriOrSafeCurie("[dc:creator]", _uriMappings, "property");
-            var result2 = _processor.IsUriOrSafeCurie("http://example.org/john-d/", _uriMappings, "href");
+            var result1 = _processor.IsUriOrSafeCurie("[dc:creator]", null, _uriMappings, "property");
+            var result2 = _processor.IsUriOrSafeCurie("http://example.org/john-d/", null, _uriMappings, "href");
 
             // Assert
             Assert.IsNotNull(result1);
@@ -159,7 +159,7 @@ namespace sharpRDFa.Tests
             // Arrange
             
             // Act
-            IList<CURIE> result = _processor.GetCURIEs("dc:creator", _uriMappings);
+            IList<CURIE> result = _processor.GetCURIEs("dc:creator", null, _uriMappings);
 
             // Assert
             Assert.IsTrue(result.Count > 0);
@@ -185,7 +185,7 @@ namespace sharpRDFa.Tests
             // Arrange
 
             // Act
-            string result = _processor.SafeCURIEtoURI("[dc:creator]", _uriMappings);
+            string result = _processor.SafeCURIEtoURI("[dc:creator]", null, _uriMappings);
 
             // Assert
             Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
@@ -222,7 +222,7 @@ namespace sharpRDFa.Tests
             // Arrange
 
             // Act
-            string result = _processor.ResolveSafeCURIE("[dc:creator]", "http://example.org/john-d/", _uriMappings);
+            string result = _processor.ResolveSafeCURIE("[dc:creator]", "http://example.org/john-d/", null, _uriMappings);
 
             // Assert
             Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);

@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System;
 using System.Linq;
-using HtmlAgilityPack;
 using NUnit.Framework;
 
 namespace sharpRDFa.Tests
@@ -23,6 +21,11 @@ namespace sharpRDFa.Tests
             var parser = new RDFaParser();
             var triples = parser.GetRDFTriplesFromFile("Resource\\XHTML+RDFa 1.0.html");
 
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
+
             Assert.IsNotNull(triples);
             Assert.AreEqual(7, triples.Count);
             Assert.AreEqual("http://example.org/john-d/", triples[0].Subject);
@@ -43,26 +46,69 @@ namespace sharpRDFa.Tests
 
             Assert.AreEqual("http://example.org/john-d/#me", triples[4].Subject);
             Assert.AreEqual("http://xmlns.com/foaf/0.1/interest", triples[4].Predicate);
-            Assert.AreEqual("urn://ISBN:0752820907", triples[4].Object.Uri);
+            Assert.AreEqual("urn:ISBN:0752820907", triples[4].Object.Uri);
 
-            Assert.AreEqual("urn://ISBN:0752820907", triples[5].Subject);
+            Assert.AreEqual("urn:ISBN:0752820907", triples[5].Subject);
             Assert.AreEqual("http://purl.org/dc/elements/1.1/title", triples[5].Predicate);
             Assert.AreEqual("Weaving the Web", triples[5].Object.Literal);
 
-            Assert.AreEqual("urn://ISBN:0752820907", triples[6].Subject);
+            Assert.AreEqual("urn:ISBN:0752820907", triples[6].Subject);
             Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", triples[6].Predicate);
             Assert.AreEqual("Tim Berners-Lee", triples[6].Object.Literal);
 
         }
 
-        //[Test]
+        [Test]
+        public void AcceptanceTest_HTML_5_RDFa_1_1()
+        {
+            var parser = new RDFaParser();
+            var triples = parser.GetRDFTriplesFromFile("Resource\\HTML_5_RDFa_1_1.html");
+
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
+
+            Assert.IsNotNull(triples);
+            Assert.AreEqual(7, triples.Count);
+            Assert.AreEqual("http://example.org/john-d/", triples[0].Subject);
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", triples[0].Predicate);
+            Assert.AreEqual("Jonathan Doe", triples[0].Object.Literal);
+
+            Assert.AreEqual("http://example.org/john-d/", triples[1].Subject);
+            Assert.AreEqual("http://xmlns.com/foaf/0.1/primaryTopic", triples[1].Predicate);
+            Assert.AreEqual("http://example.org/john-d/#me", triples[1].Object.Uri);
+
+            Assert.AreEqual("http://example.org/john-d/#me", triples[2].Subject);
+            Assert.AreEqual("http://xmlns.com/foaf/0.1/nick", triples[2].Predicate);
+            Assert.AreEqual("John D", triples[2].Object.Literal);
+
+            Assert.AreEqual("http://example.org/john-d/#me", triples[3].Subject);
+            Assert.AreEqual("http://xmlns.com/foaf/0.1/interest", triples[3].Predicate);
+            Assert.AreEqual("http://www.neubauten.org/", triples[3].Object.Uri);
+
+            Assert.AreEqual("http://example.org/john-d/#me", triples[4].Subject);
+            Assert.AreEqual("http://xmlns.com/foaf/0.1/interest", triples[4].Predicate);
+            Assert.AreEqual("urn:ISBN:0752820907", triples[4].Object.Uri);
+
+            Assert.AreEqual("urn:ISBN:0752820907", triples[5].Subject);
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/title", triples[5].Predicate);
+            Assert.AreEqual("Weaving the Web", triples[5].Object.Literal);
+
+            Assert.AreEqual("urn:ISBN:0752820907", triples[6].Subject);
+            Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", triples[6].Predicate);
+            Assert.AreEqual("Tim Berners-Lee", triples[6].Object.Literal);
+
+        }
+
+        [Test]
         public void AcceptanceTest_IMDB_The_Rock()
         {
             var parser = new RDFaParser();
             var triples = parser.GetRDFTriplesFromFile("Resource\\IMDB_The_Rock.html").Where(x => x.Subject != null && x.Predicate != null).ToList();
         }
 
-        //[Test]
+        [Test]
         public void AcceptanceTest_CharlesRobertDarwin()
         {
             var parser = new RDFaParser();
@@ -75,7 +121,55 @@ namespace sharpRDFa.Tests
             var parser = new RDFaParser();
             var triples = parser.GetRDFTriplesFromFile("Resource\\alice-example.html");
 
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
+        }
+        
+        [Test]
+        public void AcceptanceTest_WebLink()
+        {
+            var parser = new RDFaParser();
+            //var triples = parser.GetRDFTriplesFromURL("http://www.3kbo.com/examples/rdfa/simple.html");
+            var triples = parser.GetRDFTriplesFromURL("http://www.bbc.co.uk/");
 
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
+
+        }
+        
+        [Test]
+        public void UpdateDefaultVocabulary_ElementWithVocab_UpdatesContextDefaultVocabulary()
+        {
+            // Arrange
+            var parser = new RDFaParser();
+            var context = _testContext.GetParserContext();
+            var element = _testContext.GetElement("Resource\\alice-example.html", "//body");
+
+            // Act
+            var result = parser.UpdateDefaultVocabulary(element);
+            
+            // Assert
+            Assert.AreEqual("http://purl.org/dc/terms/", result);
+        }
+
+        [Test]
+        public void UpdateDefaultVocabulary_ElementAndAnsestorsDoesNotHaveVocab_ReturnNull()
+        {
+            // Arrange
+            var parser = new RDFaParser();
+            var context = _testContext.GetParserContext();
+            context.DefaultVocabulary = "http://purl.org/dc/terms/";
+            var element = _testContext.GetElement("Resource\\alice-example.html", "//head");
+
+            // Act
+            var result = parser.UpdateDefaultVocabulary(element);
+
+            // Assert
+            Assert.IsNull(result);
         }
 
         [Test]

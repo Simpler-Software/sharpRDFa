@@ -17,22 +17,22 @@ namespace sharpRDFa.Extension
             return Processor.IsNameSpace(attribute.Name);
         }
 
-        public static object IsUriOrSafeCurie(this HtmlAttribute attribute, IDictionary<string, string> uriMappings)
+        public static object IsUriOrSafeCurie(this HtmlAttribute attribute, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (attribute.IsNull()) return null;
-            return Processor.IsUriOrSafeCurie(attribute.Value, uriMappings, attribute.Name);
+            return Processor.IsUriOrSafeCurie(attribute.Value, vocabulary, uriMappings, attribute.Name);
         }
 
-        public static CURIE IsSafeCurie(this HtmlAttribute attribute, IDictionary<string, string> uriMappings)
+        public static CURIE IsSafeCurie(this HtmlAttribute attribute, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (attribute.IsNull()) return null;
-            return Processor.IsSafeCURIE(attribute.Value, uriMappings);
+            return Processor.IsSafeCURIE(attribute.Value, vocabulary, uriMappings);
         }
 
         public static CURIE IsCurie(this HtmlAttribute attribute, IDictionary<string, string> uriMappings)
         {
             if (attribute.IsNull()) return null;
-            return Processor.IsCURIE(attribute.Value, uriMappings);
+            return Processor.IsCURIE(attribute.Value, null, uriMappings);
         }
 
         public static string IsUri(this HtmlAttribute attribute)
@@ -41,15 +41,15 @@ namespace sharpRDFa.Extension
             return Processor.IsURI(attribute.Value, attribute.Name);
         }
 
-        public static IList<CURIE> GetCURIEs(this HtmlAttribute attribute, IDictionary<string, string> mappings)
+        public static IList<CURIE> GetCURIEs(this HtmlAttribute attribute, string vocabulary, IDictionary<string, string> mappings)
         {
             if (attribute.IsNull()) return null;
-            return Processor.GetCURIEs(attribute.Value, mappings);
+            return Processor.GetCURIEs(attribute.Value, vocabulary, mappings);
         }
 
         private static CURIE GetCURIE(string attributeValue, IDictionary<string, string> mappings)
         {
-            return Processor.IsCURIE(attributeValue, mappings);
+            return Processor.IsCURIE(attributeValue, null, mappings);
         }
 
         public static string ResolveCURIE(this HtmlAttribute attribute, string baseUri, IDictionary<string, string> mappings)

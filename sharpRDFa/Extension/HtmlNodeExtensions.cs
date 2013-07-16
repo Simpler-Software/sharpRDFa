@@ -72,6 +72,13 @@ namespace sharpRDFa.Extension
             if (node.IsNotNull() && node.Attributes[attributeName].IsNotNull())
                 return node.Attributes[attributeName].Value;
             return string.Empty;
-        }        
+        }
+
+        public static string GetAttributeValue(this HtmlNode element, string[] attributeNames)
+        {
+            return element.IsNull() ? null : attributeNames
+                .Select(attributeName => element.GetAttributeValue(attributeName, null))
+                .FirstOrDefault(value => !string.IsNullOrEmpty(value));
+        }
     }
 }

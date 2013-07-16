@@ -11,5 +11,7 @@ namespace sharpRDFa
         public IDictionary<string, string> PrefixMappings { get; set; }
         public string ParentSubject { get; set; }
         public ObjectNode ParentObject { get; set; }
+        public string DefaultVocabulary { get; set; }
+
     }
 }

@@ -15,11 +15,11 @@ namespace sharpRDFa.RDF
             _processor = new RDFaProcessor();
         }
 
-        public void CreateSubject(string resource, string baseURL, IDictionary<string, string> uriMappings)
+        public void CreateSubject(string resource, string baseURL, string vocabulary, IDictionary<string, string> uriMappings)
         {
             string subject = null;
 
-            var subjectSafeCURIE = _processor.IsSafeCURIE(resource, uriMappings);
+            var subjectSafeCURIE = _processor.IsSafeCURIE(resource, vocabulary, uriMappings);
             
             if (subjectSafeCURIE != null)
             {
@@ -35,7 +35,7 @@ namespace sharpRDFa.RDF
                 else
                 {
                     /* resolve Safe CURIE */
-                    subject = _processor.ResolveSafeCURIE(resource, baseURL, uriMappings);
+                    subject = _processor.ResolveSafeCURIE(resource, baseURL, vocabulary, uriMappings);
                 }
             }
             else
@@ -47,10 +47,10 @@ namespace sharpRDFa.RDF
             _rdfTriple.Subject = subject;
         }
 
-        public void CreatePredicate(string property, string baseURL, IDictionary<string, string> uriMappings)
+        public void CreatePredicate(string property, string baseURL, string vocabulary, IDictionary<string, string> uriMappings)
         {
             string predicate = null;
-            var predicateSafeCURIE = _processor.IsSafeCURIE(property, uriMappings);
+            var predicateSafeCURIE = _processor.IsSafeCURIE(property, vocabulary, uriMappings);
 
             if (predicateSafeCURIE != null)
             {
@@ -68,7 +68,7 @@ namespace sharpRDFa.RDF
                 else
                 {
                     /* resolve Safe CURIE */
-                    predicate = _processor.ResolveSafeCURIE(property, baseURL, uriMappings);
+                    predicate = _processor.ResolveSafeCURIE(property, baseURL, vocabulary, uriMappings);
                 }
             }
             else
@@ -80,14 +80,15 @@ namespace sharpRDFa.RDF
             _rdfTriple.Predicate = predicate;
         }
 
-        public void CreateObject(string objectValue, string language, string dataType, TripleObjectType type, string baseURL, IDictionary<string, string> uriMappings)
+        
+        public void CreateObject(string objectValue, string language, string dataType, TripleObjectType type, string baseURL, string vocabulary, IDictionary<string, string> uriMappings)
         {
-            var newObject = new ObjectNode();
+            var newObject = new ObjectNode { Type = type };
 
             if (type == TripleObjectType.URIorSafeCURIE)
             {
                 {
-                    var objectSafeCURIE = _processor.IsSafeCURIE(objectValue, uriMappings);
+                    var objectSafeCURIE = _processor.IsSafeCURIE(objectValue, vocabulary, uriMappings);
 
                     if (objectSafeCURIE != null)
                     {
@@ -99,7 +100,7 @@ namespace sharpRDFa.RDF
                             /* safe curie */
                         else
                         {
-                            string uri = _processor.ResolveSafeCURIE(objectValue, baseURL, uriMappings);
+                            string uri = _processor.ResolveSafeCURIE(objectValue, baseURL, vocabulary, uriMappings);
                             newObject.Uri = uri;
                             newObject.UriSchema = _processor.GetURISchema(uri);
                             newObject.Curie = objectSafeCURIE.Curie;
@@ -123,10 +124,10 @@ namespace sharpRDFa.RDF
                 }
                 if (dataType != null)
                 {
-                    CURIE datatypeSafeCURIE = _processor.IsSafeCURIE(dataType, uriMappings);
+                    CURIE datatypeSafeCURIE = _processor.IsSafeCURIE(dataType, vocabulary, uriMappings);
 
                     newObject.DataType = datatypeSafeCURIE != null
-                                             ? _processor.ResolveSafeCURIE(dataType, baseURL, uriMappings)
+                                             ? _processor.ResolveSafeCURIE(dataType, baseURL, vocabulary, uriMappings)
                                              : _processor.ResolveURI(dataType, baseURL);
                 }
             }

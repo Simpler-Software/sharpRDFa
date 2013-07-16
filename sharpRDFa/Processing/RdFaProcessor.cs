@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using sharpRDFa.Extension;
 using sharpRDFa.RDFa;
 
 namespace sharpRDFa.Processing
@@ -34,7 +35,7 @@ namespace sharpRDFa.Processing
             return result;
         }
 
-        public CURIE IsCURIE(string input, IDictionary<string, string> uriMappings)
+        public CURIE IsCURIE(string input, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
             const string curieExp = "^" + Constants.Curie + "$";
@@ -43,8 +44,9 @@ namespace sharpRDFa.Processing
 
             if ((regExResult != null) && (regExResult[2] != null) && (regExResult[2] != "_"))
             {
-                if (uriMappings == null) return null;
-                if (uriMappings[regExResult[1]] == null) return null;
+                if (uriMappings.IsNull() && vocabulary.IsNull()) return null;
+                
+                if (!uriMappings.ContainsKey(regExResult[1]) && vocabulary.IsNull()) return null;
 
                 var result = new CURIE { Curie = regExResult[0] };
 
@@ -61,7 +63,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public CURIE IsSafeCURIE(string input, IDictionary<string, string> uriMappings)
+        public CURIE IsSafeCURIE(string input, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
             const string curieExp = "^\\[(" + Constants.Curie + ")\\]$";
@@ -71,8 +73,8 @@ namespace sharpRDFa.Processing
             {
                 if ((regExResult[1] != null) && (regExResult[2] != null) && (regExResult[2] != "_"))
                 {
-                    if (uriMappings == null) return null;
-                    if (uriMappings[regExResult[2]] == null) return null;
+                    if (uriMappings.IsNull() && vocabulary.IsNull()) return null;
+                    if (!uriMappings.ContainsKey(regExResult[2]) && vocabulary.IsNull()) return null;
                 }
 
                 var result = new CURIE { Curie = regExResult[1] };
@@ -130,14 +132,14 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public object IsUriOrSafeCurie(string input, IDictionary<string, string> uriMappings, string attributeName)
+        public object IsUriOrSafeCurie(string input, string vocabulary, IDictionary<string, string> uriMappings, string attributeName)
         {
             if (input == null)
             {
                 return null;
             }
 
-            var resSafeCURIE = IsSafeCURIE(input, uriMappings);
+            var resSafeCURIE = IsSafeCURIE(input, vocabulary, uriMappings);
 
             if (resSafeCURIE != null)
             {
@@ -184,7 +186,7 @@ namespace sharpRDFa.Processing
                 return resReservedWord;
             }
 
-            var resURI = IsCURIE(input, uriMappings);
+            var resURI = IsCURIE(input, null, uriMappings);
 
             if (resURI != null)
             {
@@ -194,14 +196,14 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public IList<CURIE> GetCURIEs(string attributeValue, IDictionary<string, string> uriMappings)
+        public IList<CURIE> GetCURIEs(string attributeValue, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(attributeValue)) return null;
 
             string[] listOfAttributes = Regex.Split(attributeValue, @"/(?:$|^|\s+)/");
 
             IList<CURIE> result = listOfAttributes
-                .Select(attrib => IsCURIE(attrib, uriMappings))
+                .Select(attrib => IsCURIE(attrib, vocabulary, uriMappings))
                 .Where(curie => curie != null).ToList();
 
             if (result.Count > 0) return result;
@@ -210,7 +212,7 @@ namespace sharpRDFa.Processing
 
         public string CURIEtoURI(string curie, IDictionary<string, string> uriMappings)
         {
-            var resCurie = IsCURIE(curie, uriMappings);
+            var resCurie = IsCURIE(curie, null, uriMappings);
             var resURI = "";
 
             if (resCurie != null)
@@ -239,22 +241,22 @@ namespace sharpRDFa.Processing
             return null;
         }
 
-        public string SafeCURIEtoURI(string aSafeCurie, IDictionary<string, string> uriMappings)
+        public string SafeCURIEtoURI(string aSafeCurie, string vocabulary, IDictionary<string, string> uriMappings)
         {
-            var resSafeCurie = IsSafeCURIE(aSafeCurie, uriMappings);
+            var resSafeCurie = IsSafeCURIE(aSafeCurie, vocabulary, uriMappings);
             var resURI = "";
 
             if (resSafeCurie != null)
             {
-
-                if ((resSafeCurie.Prefix != null) && ((uriMappings == null) || (uriMappings[resSafeCurie.Prefix] == null)))
-                    return null;
-
-                if (resSafeCurie.Prefix != null)
+                if (resSafeCurie.Prefix != null && uriMappings.ContainsKey(resSafeCurie.Prefix))
                 {
                     resURI = resURI + uriMappings[resSafeCurie.Prefix];
                 }
                 /* default prefix mapping in RDFa */
+                else if(vocabulary.IsNotNull())
+                {
+                    resURI = resURI + vocabulary;
+                }
                 else
                 {
                     resURI = resURI + "http://www.w3.org/1999/xhtml/vocab#";
@@ -276,9 +278,9 @@ namespace sharpRDFa.Processing
             return anURI != null ? ResolveURI(anURI, baseURI) : null;
         }
 
-        public string ResolveSafeCURIE(string aCurie, string baseURI, IDictionary<string, string> uriMappings)
+        public string ResolveSafeCURIE(string aCurie, string baseURI, string vocabulary, IDictionary<string, string> uriMappings)
         {
-            var anURI = SafeCURIEtoURI(aCurie, uriMappings);
+            var anURI = SafeCURIEtoURI(aCurie, vocabulary, uriMappings);
             return anURI != null ? ResolveURI(anURI, baseURI) : null;
         }
 
@@ -358,11 +360,14 @@ namespace sharpRDFa.Processing
         {
             var result = "";
 
-            if (scheme != null)
+            if (scheme.IsNotNull())
                 result = result + scheme + ":";
-
-            if (authority != null)
+            
+            if (authority.IsNotNull() && scheme.ToLower() != "urn")
                 result = result + "//" + authority;
+            
+            if (authority.IsNotNull() && scheme.ToLower() == "urn")
+                result = result + authority;
 
             if (path != null)
                 result = result + path;

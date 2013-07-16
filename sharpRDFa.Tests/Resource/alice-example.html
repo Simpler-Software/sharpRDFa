@@ -1,70 +1,77 @@
 ﻿<!DOCTYPE html>
 <html>
-  <head prefix="og: http://ogp.me/ns#">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-	<meta property="og:title" content="Alice’s Blog" />
+<head prefix="og: http://ogp.me/ns#">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta property="og:title" content="Alice’s Blog" />
     <meta property="og:type" content="text" />
     <meta property="og:image" content="http://example.com/alice/bob-ugly.jpg" />
-	<title>Alice’s Blog</title>
-	<base href="http://example.com/" />
+    <title>Alice’s Blog</title>
+    <base href="http://example.com/" />
     <link rel="stylesheet" type="text/css" href="http://www.w3.org/2010/02/rdfa/sources/rdfa-primer/alice-example.css">
-  </head>
-  <body vocab="http://purl.org/dc/terms/" prefix="schema: http://schema.org/">
+</head>
+<body vocab="http://purl.org/dc/terms/" prefix="schema: http://schema.org/">
     <h1>Alice’s Blog</h1>
-	<div id="meta">
-	  <a href="http://www.w3.org/2010/02/rdfa/sources/rdfa-primer/alice-example.ttl">
-		<img src="http://www.w3.org/Icons/SW/Buttons/sw-rdfa-gray.png" alt="get metadata in RDF Turtle"/>
-	  </a>
-	</div>
+    <div id="meta">
+        <a href="http://www.w3.org/2010/02/rdfa/sources/rdfa-primer/alice-example.ttl">
+            <img src="http://www.w3.org/Icons/SW/Buttons/sw-rdfa-gray.png" alt="get metadata in RDF Turtle" />
+        </a>
+    </div>
     <div>
-	  <div class="sidebar" vocab="http://xmlns.com/foaf/0.1/" resource="#me" typeof="Person" >		
-		  <p>
-			<span property="name">Alice Birpemswick</span>,<br />
-		    Email: <a property="mbox" href="mailto:alice@example.com">alice@example.com</a>,<br />
-		    Phone: <a property="phone" href="tel:+1-617-555-7332">+1 617.555.7332</a>.</p>
-		  <p>My buddies:</p>		
-		  <ul>
-			  <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/bob"><span property="name">Bob</span></a></li>
-			  <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/eve"><span property="name">Eve</span></a></li>
-			  <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/manu"><span property="name">Manu</span></a></li>
-		  </ul>
-	  </div>
+        <div class="sidebar" vocab="http://xmlns.com/foaf/0.1/" resource="#me" typeof="Person">
+            <p>
+                <span property="name">Alice Birpemswick</span>,<br />
+                Email: <a property="mbox" href="mailto:alice@example.com">alice@example.com</a>,<br />
+                Phone: <a property="phone" href="tel:+1-617-555-7332">+1 617.555.7332</a>.
+            </p>
+            <p>My buddies:</p>
+            <ul>
+                <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/bob"><span property="name">Bob</span></a></li>
+                <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/eve"><span property="name">Eve</span></a></li>
+                <li property="knows" typeof="Person"><a property="homepage" href="http://example.com/manu"><span property="name">Manu</span></a></li>
+            </ul>
+        </div>
 
-	  <div class="blog-content">
-		  <div class="blog-post" resource="/alice/posts/trouble_with_bob" typeof="schema:BlogPosting">
-			  <h2 property="title">The trouble with Bob</h2>
-			  <p>Date: <span property="created" content="2011-09-10">10th of September, 2011</span></p>
-			  <h3 property="creator schema:creator" resource="#me">Alice</h3>
-			  <div property="schema:articleBody"><p>The trouble with Bob is that he takes much better photos than I do:</p></div>
-			  <!-- the image is from http://www.pdphoto.org/PictureDetail.php?pg=5627&mat=pdef,
+        <div class="blog-content">
+            <div class="blog-post" resource="/alice/posts/trouble_with_bob" typeof="schema:BlogPosting">
+                <h2 property="title">The trouble with Bob</h2>
+                <p>Date: <span property="created" content="2011-09-10">10th of September, 2011</span></p>
+                <h3 property="creator schema:creator" resource="#me">Alice</h3>
+                <div property="schema:articleBody">
+                    <p>The trouble with Bob is that he takes much better photos than I do:</p>
+                </div>
+                <!-- the image is from http://www.pdphoto.org/PictureDetail.php?pg=5627&mat=pdef,
 			  available as http://creativecommons.org/licenses/publicdomain/ -->
-			  <div class="imgbox" resource="http://www.w3.org/2006/07/SWD/RDFa/primer/sunset.jpg">
-				  <img src="http://www.w3.org/2006/07/SWD/RDFa/primer/sunset.jpg" alt="sunset" width="300"/>
-				  <p><span property="title">Beautiful Sunset</span> by <span property="creator">Bob</span>.</p>
-			  </div>		
-		  </div>
-	  
-		  <div class="blog-post"  resource="/alice/posts/jos_barbecue" typeof="schema:BlogPosting">
-			 <h2 property="title">Jo’s Barbecue</h2>
-			 <p>Date: <span property="created" content="2011-09-14">14th of September, 2011</span></p>
-			 <h3 property="creator schema:creator">Eve</h3>
-			  <div property="schema:articleBody"><p>…</p></div>
-		  </div>	  
+                <div class="imgbox" resource="http://www.w3.org/2006/07/SWD/RDFa/primer/sunset.jpg">
+                    <img src="http://www.w3.org/2006/07/SWD/RDFa/primer/sunset.jpg" alt="sunset" width="300" />
+                    <p><span property="title">Beautiful Sunset</span> by <span property="creator">Bob</span>.</p>
+                </div>
+            </div>
 
-		  <div class="blog-post" resource="/alice/posts/my_photos" typeof="schema:BlogPosting">
-			 <h2 property="title">I will post my photos nevertheless…</h2>
-			 <p>Date: <span property="created" content="2011-09-15">15th of September, 2011</span></p>
-			 <h3 property="creator schema:creator" resource="#me">Alice</h3>
-			  <div property="schema:articleBody"><p>…</p></div>
-		  </div>	  
-	  </div>
-	</div>
-  
-  	<div id="footer">
-  		<p>The content on this site is licensed under a
+            <div class="blog-post" resource="/alice/posts/jos_barbecue" typeof="schema:BlogPosting">
+                <h2 property="title">Jo’s Barbecue</h2>
+                <p>Date: <span property="created" content="2011-09-14">14th of September, 2011</span></p>
+                <h3 property="creator schema:creator">Eve</h3>
+                <div property="schema:articleBody">
+                    <p>…</p>
+                </div>
+            </div>
+
+            <div class="blog-post" resource="/alice/posts/my_photos" typeof="schema:BlogPosting">
+                <h2 property="title">I will post my photos nevertheless…</h2>
+                <p>Date: <span property="created" content="2011-09-15">15th of September, 2011</span></p>
+                <h3 property="creator schema:creator" resource="#me">Alice</h3>
+                <div property="schema:articleBody">
+                    <p>…</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="footer">
+        <p>
+            The content on this site is licensed under a
 		<a property="http://creativecommons.org/ns#license" href="http://creativecommons.org/licenses/by/3.0/">Creative Commons License</a>
-		©<span property="dc:date" datatype="xsd:gYear">2011</span> Alice Birpemswick.</p>
-	</div>
-		
-  </body>
+            ©<span property="dc:date" datatype="xsd:gYear">2011</span> Alice Birpemswick.
+        </p>
+    </div>
+</body>
 </html>

@@ -4,29 +4,63 @@ namespace sharpRDFa
 {
     public class Constants
     {
-        // about – a URI or CURIE specifying the resource the metadata is about
-        // rel and rev – specifying a relationship and reverse-relationship with another resource, respectively
-        // src, href and resource – specifying the partner resource
-        // property – specifying a property for the content of an element or the partner resource
-        // content – optional attribute that overrides the content of the element when using the property attribute
-        // datatype – optional attribute that specifies the datatype of text specified for use with the property attribute
-        // typeof – optional attribute that specifies the RDF type(s) of the subject or the partner resource (the resource that the metadata is about).
-        public static IList<string> RDFAttributes = new List<string>
-                                                        {
-                                                            "about",
-                                                            "rel",
-                                                            "rev",
-                                                            "src",
-                                                            "href",
-                                                            "resource",
-                                                            "property",
-                                                            "content",
-                                                            "typeof"
-                                                        };
+        /* a SafeCURIEorCURIEorIRI, used for stating what
+         * the data is about (a 'subject' in RDF terminology) */
+        public const string About_RDFaAttribute = "about";
+
+        /* a CDATA string, for supplying machine-readable
+         * content for a literal (a 'literal object', in RDF terminology) */
+        public const string Content_RDFaAttribute = "content";
+
+        /* a TERMorCURIEorAbsIRI representing a datatype,
+         * to express the datatype of a literal */
+        public const string DataType_RDFaAttribute = "datatype";
+
+        /* a traditionally navigable IRI for expressing
+         * the partner resource of a relationship (a 'resource object', in RDF terminology) */
+        public const string Href_RDFaAttribute = "href";
+
+        /* An attribute used to indicate that the object associated 
+         * with a rel or property attribute on the same element is to be added to 
+         * the list for that predicate. The value of this attribute must be ignored. 
+         * Presence of this attribute causes a list to be created if it does not already exist. */          
+        public const string Inlist_RDFaAttribute = "inlist";
+
+        /* a white space separated list of prefix-name IRI pairs of the form 
+         * NCName ':' ' '+ xsd:anyURI */
+        public const string Prefix_RDFaAttribute = "prefix";
+
+        /* a white space separated list of TERMorCURIEorAbsIRIs,
+         * used for expressing relationships between a subject 
+         * and either a resource object if given or some literal text (also a 'predicate') */
+        public const string Property_RDFaAttribute = "property";
+
+        /* a white space separated list of TERMorCURIEorAbsIRIs, 
+         * used for expressing relationships between two resources ('predicates' in RDF terminology); */
+        public const string Rel_RDFaAttribute = "rel";
+
+        /* a SafeCURIEorCURIEorIRI for expressing the partner resource of a relationship 
+         * that is not intended to be navigable (e.g., a 'clickable' link) (also an 'object'); */
+        public const string Resource_RDFaAttribute = "resource";
+
+        /* a white space separated list of TERMorCURIEorAbsIRIs, used for expressing
+         * reverse relationships between two resources (also 'predicates');*/
+        public const string Rev_RDFaAttribute = "rev";
+
+        /* an IRI for expressing the partner resource of a relationship 
+         * when the resource is embedded (also a 'resource object'); */
+        public const string Src_RDFaAttribute = "src";
+
+        /* a white space separated list of TERMorCURIEorAbsIRIs 
+         * that indicate the RDF type(s) to associate with a subject; */
+        public const string TypeOf_RDFaAttribute = "typeof";
+
+        /* an IRI that defines the mapping to use when a TERM is referenced in an attribute value. */
+        public const string Vocab_RDFaAttribute = "vocab";
 
 
         /* Declaring Namespaces: http://www.w3.org/TR/1999/REC-xml-names-19990114/#ns-decl */
-        public const string CombiningChar = "[\\u0300-\\u0345]"
+        public const string CombiningCharRegex = "[\\u0300-\\u0345]"
                                         + "[\\u0360-\\u0361] | "
                                         + "[\\u0483-\\u0486] | "
                                         + "[\\u0591-\\u05A1] | "
@@ -122,7 +156,7 @@ namespace sharpRDFa
                                         + "\\u3099 | "
                                         + "\\u309A";
 
-        public const string Extender = "\\u00B7 | "
+        public const string ExtenderRegex = "\\u00B7 | "
                                         + "\\u02D0 | "
                                         + "\\u02D1 | "
                                         + "\\u0387 | "
@@ -134,30 +168,32 @@ namespace sharpRDFa
                                         + "[\\u309D-\\u309E] | "
                                         + "[\\u30FC-\\u30FE]   ";
 
-        public const string NCNameChar = "(?:\\w|\\d|\\.|-|_" + CombiningChar + "|" + Extender + ")";
-        public const string NCName = "(?:\\w|_)(?:" + NCNameChar + ")*";
-        public const string PrefixedAttName = "xmlns:(" + NCName + ")";
+        public const string NCNameCharRegex = "(?:\\w|\\d|\\.|-|_" + CombiningCharRegex + "|" + ExtenderRegex + ")";
+        public const string NCNameRegex = "(?:\\w|_)(?:" + NCNameCharRegex + ")*";
+        public const string PrefixedAttNameRegex = "xmlns:(" + NCNameRegex + ")";
 
         /* Uniform Resource Identifiers (URI): http://www.ietf.org/rfc/rfc2396.txt */
         /* '[' and ']' characters are excluded to distingish between safe curies and uris */
-        public const string UriReference = "(?:(?:[^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\[\\]\\/\\?\\#]*))?(?:[^\\[\\]\\?\\#]*)(?:\\?(?:[^\\[\\]\\#]*))?(?:\\#(?:[^\\[\\]]*))?";
-        public const string UriReferenceParsed = "(?:([^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/([^\\[\\]\\/\\?\\#]*))?([^\\[\\]\\?\\#]*)(?:\\?([^\\[\\]\\#]*))?(?:\\#([^\\[\\]]*))?";
-        public const string URISchema   = @"(?:([^\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\/\\?\#]*))?(?:[^\\?\\#]*)(?:\\?(?:[^\\#]*))?(?:\\#(?:.*))?";
+        public const string UriReferenceRegex = "(?:(?:[^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\[\\]\\/\\?\\#]*))?(?:[^\\[\\]\\?\\#]*)(?:\\?(?:[^\\[\\]\\#]*))?(?:\\#(?:[^\\[\\]]*))?";
+        public const string UriReferenceParsedRegex = "(?:([^\\[\\]\\:\\/\\?\\#]+):)?(?:\\/\\/([^\\[\\]\\/\\?\\#]*))?([^\\[\\]\\?\\#]*)(?:\\?([^\\[\\]\\#]*))?(?:\\#([^\\[\\]]*))?";
+        public const string URISchemaRegex   = @"(?:([^\\:\\/\\?\\#]+):)?(?:\\/\\/(?:[^\\/\\?\#]*))?(?:[^\\?\\#]*)(?:\\?(?:[^\\#]*))?(?:\\#(?:.*))?";
         public const string ErrorHtmlAttributeNull = "HtmlAttribute can be null";
 
-        public const string BnodePrefix = "rdfadevBnode";
-        public const string EmptyBnodePrefix = "rdfadevBnodeEmpty";
-
         /* Internationalized Resource Identifiers (IRI): http://www.ietf.org/rfc/rfc3987.txt */
-        public const string IrelativeRef = "(?:\\/\\/(?:[^\\/\\?\\#]*))?(?:[^\\?\\#]*)(?:\\?(?:[^\\#]*))?(?:\\#(?:.*))?";
+        public const string IrelativeRefRegex = "(?:\\/\\/(?:[^\\/\\?\\#]*))?(?:[^\\?\\#]*)(?:\\?(?:[^\\#]*))?(?:\\#(?:.*))?";
 
         /* CURIE Syntax Definition: http://www.w3.org/TR/rdfa-syntax/#s_curies */
-        public const string Prefix = NCName;
-        public const string Reference = IrelativeRef;
-        public const string Curie = "(?:(" + Prefix + ")" + "?:)" + "(" + Reference + ")";
+        public const string PrefixRegex = NCNameRegex;
+        public const string ReferenceRegex = IrelativeRefRegex;
+        public const string CurieRegex = "(?:(" + PrefixRegex + ")" + "?:)" + "(" + ReferenceRegex + ")";
 
         // list of reserved values for @rel and @rev
-        public const string ReservedWord = "(?:alternate|appendix|bookmark|cite|chapter|contents|copyright|first|glossary|help|icon|index|last|license|meta|next|p3pv1|prev|role|section|stylesheet|subsection|start|top|up)";
+        public const string ReservedWordRegex = "(?:alternate|appendix|bookmark|cite|chapter|contents|copyright|first|glossary|help|icon|index|last|license|meta|next|p3pv1|prev|role|section|stylesheet|subsection|start|top|up)";
 
+        public const string UriDataType = "Uri";
+        public const string LiteralDataType = "Literal";
+
+        public const string BnodePrefix = "rdfadevBnode";
+        public const string EmptyBnodePrefix = "rdfadevBnodeEmpty";       
     }
 }

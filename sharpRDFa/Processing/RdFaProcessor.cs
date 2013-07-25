@@ -8,10 +8,13 @@ namespace sharpRDFa.Processing
 {
     public class RDFaProcessor : IRDFaProcessor
     {
+        private const string TermRegexp = "^([a-zA-Z_])([0-9a-zA-Z_\\.-]*)$";
+        private const string SafeCurieRegexp = "^\\[(.*)\\]$";
+
         public NameSpace IsNameSpace(string attributeName)
         {
             if (string.IsNullOrEmpty(attributeName)) return null;
-            const string pattern = "^" + Constants.PrefixedAttName + "$";
+            const string pattern = "^" + Constants.PrefixedAttNameRegex + "$";
 
             var regExResult = MatchRegEx(attributeName, pattern);
 
@@ -38,7 +41,7 @@ namespace sharpRDFa.Processing
         public CURIE IsCURIE(string input, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
-            const string curieExp = "^" + Constants.Curie + "$";
+            const string curieExp = "^" + Constants.CurieRegex + "$";
             //const string curieExp = "^(\\w*?):(.*)$";
             var regExResult = MatchRegEx(input, curieExp);
 
@@ -66,7 +69,7 @@ namespace sharpRDFa.Processing
         public CURIE IsSafeCURIE(string input, string vocabulary, IDictionary<string, string> uriMappings)
         {
             if (string.IsNullOrEmpty(input)) return null;
-            const string curieExp = "^\\[(" + Constants.Curie + ")\\]$";
+            const string curieExp = "^\\[(" + Constants.CurieRegex + ")\\]$";
             var regExResult = MatchRegEx(input, curieExp);
 
             if (regExResult != null)
@@ -95,7 +98,7 @@ namespace sharpRDFa.Processing
         public string IsURI(string input, string attributeName)
         {
             if (string.IsNullOrEmpty(input)) return null;
-            const string uriExp = "^" + Constants.UriReference + "$";
+            const string uriExp = "^" + Constants.UriReferenceRegex + "$";
             var regExResult = MatchRegEx(input, uriExp);
 
             return regExResult != null ? regExResult[0] : null;
@@ -104,7 +107,7 @@ namespace sharpRDFa.Processing
         public URI GetURIParsed(string input)
         {
             if (string.IsNullOrEmpty(input)) return null;
-            const string uriExp = "^" + Constants.UriReferenceParsed + "$";
+            const string uriExp = "^" + Constants.UriReferenceParsedRegex + "$";
             var regExResult = MatchRegEx(input, uriExp);
 
             if (regExResult != null)
@@ -161,7 +164,7 @@ namespace sharpRDFa.Processing
             if (input == null)
                 return null;
 
-            const string reservedWordExp = "^" + Constants.ReservedWord + "$";
+            const string reservedWordExp = "^" + Constants.ReservedWordRegex + "$";
             var resReservedWordExp = MatchRegEx(input, reservedWordExp);
 
             if (resReservedWordExp != null)
@@ -350,10 +353,77 @@ namespace sharpRDFa.Processing
 
         public string GetURISchema(string uri)
         {
-            const string uriExp = "^" + Constants.URISchema + "$";
+            const string uriExp = "^" + Constants.URISchemaRegex + "$";
             if (uri == null) return null;
             var resUriExp = MatchRegEx(uri, uriExp);
             return resUriExp != null ? resUriExp[1] : null;
+        }
+
+        public string ExpandCurie(IDictionary<string, string> prefixMappings, string vocab, string value)
+        {
+            IList<string> matches = MatchRegEx(value, "^(\\w*?):(.*)$");
+            if (matches.IsNull()) return null;
+            
+            string prefix = matches[1];
+            string referrence = matches[2];
+
+            if(string.Equals(prefix, "_"))
+            {
+                // It is a bnode
+                // return $this->remapBnode(substr($value, 2));
+            }
+            else if (prefix.IsNullOrEmpty() && !vocab.IsNullOrEmpty()) {
+                // Empty prefix
+                return vocab + referrence;
+            } 
+            else if (prefixMappings.ContainsKey(prefix)) {
+                return prefixMappings[prefix] + referrence;
+            } 
+            else if (!prefix.IsNullOrEmpty() && Vocabulary.Instance.KnownPrefixes.ContainsKey(prefix)) {
+                // Expand using well-known prefixes
+                return Vocabulary.Instance.KnownPrefixes[prefix] + referrence;
+            }
+            return null;
+        }
+
+        public string ResolveURI(IDictionary<string, string> prefixMappings, string vocab, IDictionary<string, string> terms, string value)
+        {
+            if (Regex.IsMatch(value, SafeCurieRegexp))
+            {
+                // Safe CURIE
+                IList<string> matches = MatchRegEx(value,SafeCurieRegexp);
+                return ExpandCurie(prefixMappings, vocab, matches[1]);
+            }
+            if(Regex.IsMatch(value, TermRegexp))
+            {
+                if(!vocab.IsNullOrEmpty()) return vocab + value;
+                if(terms.IsNotNull() && terms.ContainsKey(value)) return terms[value];
+                return prefixMappings[Constants.DefaultPrefix] + value;
+            }
+            else if(string.Equals(value.Substring(0, 2), "_:"))
+            {
+                return null;
+            }
+            else
+            {
+                string uri = ExpandCurie(prefixMappings, vocab, value);
+                if(!uri.IsNullOrEmpty()) return uri;
+                
+                // todo
+                /*else {
+                $parsed = new EasyRdf_ParsedUri($value);
+                if ($parsed->isAbsolute()) {
+                    return $value;
+                } elseif ($isProp) {
+                    // Properties can't be relative URIs
+                    return null;
+                } elseif ($this->baseUri) {
+                    return $this->baseUri->resolve($parsed);
+                }
+                }*/
+            }
+          
+            return null;
         }
 
         private static string RecomposeURIComponents(string scheme, string authority, string path, string query, string fragment)

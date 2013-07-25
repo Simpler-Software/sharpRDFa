@@ -226,6 +226,30 @@ namespace sharpRDFa.Tests
 
             // Assert
             Assert.AreEqual("http://purl.org/dc/elements/1.1/creator", result);
+        }
+
+        [Test]
+        public void ExpandCurie_Test()
+        {
+            // Arrange
+
+            // Act
+            var result = _processor.ExpandCurie(_uriMappings, null, "dc:creator");
+
+            // Assert
+
+        }
+        
+        [Test]
+        public void ResolveURI_Test()
+        {
+            // Arrange
+
+            // Act
+            var result = _processor.ResolveURI(_uriMappings, null, null, "[dc:creator]");
+
+            // Assert
+
         } 
     }
 }

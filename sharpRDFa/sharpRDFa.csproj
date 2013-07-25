@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="dotNetRDF">
+      <HintPath>..\packages\dotNetRDF.1.0.0.2533\lib\net40\dotNetRDF.dll</HintPath>
+    </Reference>
     <Reference Include="HtmlAgilityPack">
       <HintPath>..\packages\HtmlAgilityPack.1.4.6\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
@@ -43,18 +46,26 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="VDS.Common">
+      <HintPath>..\packages\VDS.Common.1.2.0\lib\net40-client\VDS.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="Extension\HtmlAttributeExtensions.cs" />
     <Compile Include="Extension\HtmlNodeExtensions.cs" />
+    <Compile Include="Extension\ListExtensions.cs" />
     <Compile Include="Extension\ObjectExtensions.cs" />
+    <Compile Include="Extension\StringExtensions.cs" />
     <Compile Include="IncompleteTriple.cs" />
     <Compile Include="IRDFaParser.cs" />
+    <Compile Include="IRDFWriter.cs" />
     <Compile Include="ParserContext.cs" />
     <Compile Include="RDFaParser.cs" />
     <Compile Include="RDFa\CURIE.cs" />
     <Compile Include="Processing\IRDFaProcessor.cs" />
+    <Compile Include="RDFConstructDto.cs" />
+    <Compile Include="RDFWriter.cs" />
     <Compile Include="RDF\IRDFTripleBuilder.cs" />
     <Compile Include="RDFa\NameSpace.cs" />
     <Compile Include="RDF\ObjectNode.cs" />

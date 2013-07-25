@@ -19,7 +19,7 @@ namespace sharpRDFa.Tests
         public void AcceptanceTest_XHTML_RDFa_1_0()
         {
             var parser = new RDFaParser();
-            var triples = parser.GetRDFTriplesFromFile("Resource\\XHTML+RDFa 1.0.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\XHTML+RDFa 1.0.html");
 
             foreach (var rdfTriple in triples)
             {
@@ -62,7 +62,7 @@ namespace sharpRDFa.Tests
         public void AcceptanceTest_HTML_5_RDFa_1_1()
         {
             var parser = new RDFaParser();
-            var triples = parser.GetRDFTriplesFromFile("Resource\\HTML_5_RDFa_1_1.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\HTML_5_RDFa_1_1.html");
 
             foreach (var rdfTriple in triples)
             {
@@ -105,21 +105,31 @@ namespace sharpRDFa.Tests
         public void AcceptanceTest_IMDB_The_Rock()
         {
             var parser = new RDFaParser();
-            var triples = parser.GetRDFTriplesFromFile("Resource\\IMDB_The_Rock.html").Where(x => x.Subject != null && x.Predicate != null).ToList();
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\IMDB_The_Rock.html").Where(x => x.Subject != null && x.Predicate != null).ToList();
+
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
         }
 
         [Test]
         public void AcceptanceTest_CharlesRobertDarwin()
         {
             var parser = new RDFaParser();
-            var triples = parser.GetRDFTriplesFromFile("Resource\\CharlesRobertDarwin.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\CharlesRobertDarwin.html");
+
+            foreach (var rdfTriple in triples)
+            {
+                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+            }
         }
         
         [Test]
         public void AcceptanceTest_Alice_Example()
         {
             var parser = new RDFaParser();
-            var triples = parser.GetRDFTriplesFromFile("Resource\\alice-example.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\alice-example.html");
 
             foreach (var rdfTriple in triples)
             {
@@ -132,7 +142,7 @@ namespace sharpRDFa.Tests
         {
             var parser = new RDFaParser();
             //var triples = parser.GetRDFTriplesFromURL("http://www.3kbo.com/examples/rdfa/simple.html");
-            var triples = parser.GetRDFTriplesFromURL("http://www.bbc.co.uk/");
+            var triples = parser.ParseRDFTriplesFromURL("http://www.bbc.co.uk/");
 
             foreach (var rdfTriple in triples)
             {
@@ -150,7 +160,7 @@ namespace sharpRDFa.Tests
             var element = _testContext.GetElement("Resource\\alice-example.html", "//body");
 
             // Act
-            var result = parser.UpdateDefaultVocabulary(element);
+            var result = parser.UpdateDefaultVocabulary(context, element);
             
             // Assert
             Assert.AreEqual("http://purl.org/dc/terms/", result);
@@ -166,7 +176,7 @@ namespace sharpRDFa.Tests
             var element = _testContext.GetElement("Resource\\alice-example.html", "//head");
 
             // Act
-            var result = parser.UpdateDefaultVocabulary(element);
+            var result = parser.UpdateDefaultVocabulary(context, element);
 
             // Assert
             Assert.IsNull(result);

@@ -6,8 +6,8 @@ namespace sharpRDFa
 {
     public interface IRDFaParser
     {
-        IList<RDFTriple> GetRDFTriplesFromURL(string url);
-        IList<RDFTriple> GetRDFTriplesFromFile(string filePath);
-        IList<RDFTriple> GetRDFTriples(HtmlDocument document);
+        IList<RDFTriple> ParseRDFTriplesFromURL(string url);
+        IList<RDFTriple> ParseRDFTriplesFromFile(string filePath);
+        IList<RDFTriple> ParseRDFTriples(HtmlDocument document);
     }
 }

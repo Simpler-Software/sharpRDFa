@@ -14,9 +14,10 @@ namespace sharpRDFa.Tests
         public void GetCommonPrefixes_WithEmbeddedJsonFile_ReturnsPrefixesDictionary()
         {
             // Arrange
+            var vocabulary = new Vocabulary();
 
             // Act
-            var result = Vocabulary.GetCommonPrefixes();
+            var result = vocabulary.GetKnownPrefixes();
 
             // Assert
             Assert.IsNotNull(result);

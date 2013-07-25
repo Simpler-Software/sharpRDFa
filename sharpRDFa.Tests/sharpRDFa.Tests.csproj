@@ -51,6 +51,7 @@
     <Compile Include="RDFaProcessorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDFTripleBuilderTests.cs" />
+    <Compile Include="RDFWriterTests.cs" />
     <Compile Include="TestContext.cs" />
     <Compile Include="VocabularyTests.cs" />
   </ItemGroup>
@@ -69,6 +70,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resource\CharlesRobertDarwin.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resource\FullSample.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Resource\HTML_5_RDFa_1_1.html">

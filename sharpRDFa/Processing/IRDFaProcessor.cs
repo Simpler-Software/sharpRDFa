@@ -21,5 +21,8 @@ namespace sharpRDFa.Processing
         string ResolveSafeCURIE(string curie, string baseURI, string vocabulary, IDictionary<string, string> uriMappings);
         string ResolveURI(string anURI, string baseURI);
         string GetURISchema(string uri);
+
+        string ExpandCurie(IDictionary<string, string> prefixMappings, string vocab, string value);
+        string ResolveURI(IDictionary<string, string> prefixMappings, string vocab, IDictionary<string, string> terms, string value);
     }
 }

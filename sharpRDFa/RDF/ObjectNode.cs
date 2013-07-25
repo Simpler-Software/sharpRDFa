@@ -8,7 +8,6 @@ namespace sharpRDFa.RDF
         public string Literal { get; set; }
         public string Language { get; set; }
         public string DataType { get; set; }
-        public TripleObjectType Type { get; set; }
 
         public string Value { get; set; }
     }

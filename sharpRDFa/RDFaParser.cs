@@ -1,488 +1,501 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using sharpRDFa.Extension;
+using sharpRDFa.Processing;
 using sharpRDFa.RDF;
-using sharpRDFa.RDFa;
 using sharpRDFa.Resource;
 
 namespace sharpRDFa
 {
+    /*
+     * sharpRDFa
+     * 
+     * Class to parse RDFa 1.1 with no external dependancies.
+     * 
+     * http://www.w3.org/TR/rdfa-core/
+     * 
+     * @copyright  Copyright (c) 2013-2014 Ruwan Nawarathne
+     * @license    http://opensource.org/licenses/BSD-3-Clause
+     */
+
     public class RDFaParser : IRDFaParser
     {
-        //private readonly IDictionary<string, string> _commonPrefixes;
+        private const string HtmlHeadXPath = "/html[1]/head[1]";
+        private const string HtmlElementName = "HTML";
         private decimal _bnodes;
 
-        //public RDFaParser()
-        //{
-        //    _commonPrefixes = Vocabulary.GetCommonPrefixes();
-        //}
+        private readonly IRDFaProcessor _processor = new RDFaProcessor();
 
-        public IList<RDFTriple> GetRDFTriplesFromURL(string url)
+        public IList<RDFTriple> ParseRDFTriplesFromURL(string url)
         {
             HtmlDocument document = GetDocumentFromURL(url);
-            return GetRDFTriples(document);
+            return ParseRDFTriples(document);
         }
 
-        public IList<RDFTriple> GetRDFTriplesFromFile(string filePath)
+        public IList<RDFTriple> ParseRDFTriplesFromFile(string filePath)
         {
             HtmlDocument document = GetDocumentFromFile(filePath);
-            return GetRDFTriples(document);
+            return ParseRDFTriples(document);
         }
 
-        public IList<RDFTriple> GetRDFTriples(HtmlDocument document)
+        public IList<RDFTriple> ParseRDFTriples(HtmlDocument document)
         {
-            var triples = new List<RDFTriple>();
-            HtmlNode rootElement = GetDocumentRootElement(document);
-
-            if (rootElement == null || rootElement.Name.ToUpper() != "HTML")
-                throw ParserErrorHtmlRootElementException();
-            
             ParserContext context = InitializeContext(document);
+
+            HtmlNode rootElement = GetDocumentRootElement(document);
+            ValidateRootElement(rootElement);
+
             _bnodes = 0;
-            Parse(context, rootElement, ref triples);
-            return triples;
+            Parse(context, rootElement);
+
+            return context.ConstructedTiples;
         }
 
-        private void Parse(ParserContext context, HtmlNode elementNode, ref List<RDFTriple> triples)
+        private void ValidateRootElement(HtmlNode rootElement)
         {
+            if (rootElement == null || rootElement.Name.ToUpper() != HtmlElementName)
+                throw ParserErrorHtmlRootElementException();
+        }
+
+        private void Parse(ParserContext context, HtmlNode elementNode)
+        {
+            // Step 1: Validating the html node which is going tp parse
             if (!ShouldParse(elementNode)) return;
 
-            IList<CURIE> propertyAttributeList = new List<CURIE>();
-            IList<CURIE> typeAttributeList = new List<CURIE>();
-            IList<string> relAttributeList = new List<string>();
-            IList<string> revAttributeList = new List<string>();
-
-            string subject = null;
-            string predicate = null;
-            var objecto = new ObjectNode();
-
-            // Step 1: Establish local variables
-            bool recurse = true;
+            // Step 2: Establish local variables
             bool skipElement = false;
-            string newSubject = context.ParentSubject;
-            string currentObjectLiteral = null;
-            string currentObjectResource = null;
-            string currentObjectLiteralDataType = null;
-            string currentObjectLiteralLanguage = null;
-            var localIncompleteTriples = new List<IncompleteTriple>();
-            IDictionary<string, string> prefixMappings = null;
-            string defaultVocabulary = null;
-            string currentLanguage = null;
+            string subject;
+            string objecto = null;
+            string typedResource = null;
+            IList<string> rels = new List<string>();
+            IList<string> revs = new List<string>();
+            IList<string> incompleteRels = new List<string>();
+            IList<string> incompleteRevs = new List<string>();
+            IDictionary<string, IList<string>> listMapping;
 
-            defaultVocabulary = UpdateDefaultVocabulary(elementNode);
+            string about = elementNode.GetAttributeValue(Constants.About_RDFaAttribute, null);
+            string content = elementNode.GetAttributeValue(Constants.Content_RDFaAttribute, null);
+            string dataType = elementNode.GetAttributeValue(Constants.DataType_RDFaAttribute, null);
+            string href = elementNode.GetAttributeValue(Constants.Href_RDFaAttribute, null);
+            string inlist = elementNode.GetAttributeValue(Constants.Inlist_RDFaAttribute, null);
+            string property = elementNode.GetAttributeValue(Constants.Property_RDFaAttribute, null);
+            string rel = elementNode.GetAttributeValue(Constants.Rel_RDFaAttribute, null);
+            string resource = elementNode.GetAttributeValue(Constants.Resource_RDFaAttribute, null);
+            string rev = elementNode.GetAttributeValue(Constants.Rev_RDFaAttribute, null);
+            string src = elementNode.GetAttributeValue(Constants.Src_RDFaAttribute, null);
+            string typeOf = elementNode.GetAttributeValue(Constants.TypeOf_RDFaAttribute, null);
 
-            //Step 2 update uri mappings
-            prefixMappings = UpdatePrefixMappings(context, elementNode);
+            // Step 3: Default vocabulary
+            string defaultVocabulary = UpdateDefaultVocabulary(context, elementNode);
 
-            //Step 3 set current language
-            currentLanguage = UpdateLanguage(context, elementNode); 
-            
-            //string content = elementNode.GetAttributeValue("content", null);
-            //string dataType = elementNode.GetAttributeValue("datatype", null);
-            //string property = elementNode.GetAttributeValue("property", null);
-            //string typeOf = elementNode.GetAttributeValue("typeof", null);
- 
-            //Step 4 of the processing sequence
-            if (!elementNode.HasAttribute("rel") && !elementNode.HasAttribute("rev"))
+            // Step 4: Update prefix mappings
+            IDictionary<string, string> prefixMappings = UpdatePrefixMappings(context, elementNode);
+
+            // Step 5: Update Current Language
+            var currentLanguage = UpdateLanguage(context, elementNode);
+
+            // Step 5: Establish a new subject if no rel/rev
+            if (!rel.IsNullOrEmpty() && !rev.IsNullOrEmpty())
             {
-
-                var value = elementNode.GetAttributeValue(new[]{"about","src", "resource", "href"});
-                
-                if(!string.IsNullOrEmpty(value))
+                if (!property.IsNullOrEmpty() && content.IsNullOrEmpty() && dataType.IsNullOrEmpty())
                 {
-                    newSubject = value;
-                }
-                    /*
-                if (elementNode.HasAttribute("about") && elementNode.GetAttribute("about").IsUriOrSafeCurie(prefixMappings).IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("about").Value;
-                }
-                else if (elementNode.HasAttribute("src") && elementNode.GetAttribute("src").IsUri().IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("src").Value;
-                }
-                else if (elementNode.HasAttribute("resource") && elementNode.GetAttribute("resource").IsUriOrSafeCurie(prefixMappings).IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("resource").Value;
-                }
-                else if (elementNode.HasAttribute("href") && elementNode.GetAttribute("href").IsUri().IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("href").Value;
-                }
-                 */
-                else if ((elementNode.Name.ToUpper() == "HEAD") || (elementNode.Name.ToUpper() == "BODY"))
-                {
-                    newSubject = "";
-                }
-                else if (elementNode.HasAttribute("typeof") && (typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(defaultVocabulary, prefixMappings)).IsNotNull() && typeAttributeList.Count > 0)
-                {
-                    newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
+                    subject = about;
+                    if (!typeOf.IsNullOrEmpty() && subject.IsNullOrEmpty())
+                    {
+                        typedResource = (new List<string> { resource, href, src }).FirstNonEmptyOrDefault();
+                        if (typedResource.IsNullOrEmpty()) typedResource = GetNewBNode();
+                        objecto = typedResource;
+                    }
                 }
                 else
                 {
-                    if (!string.IsNullOrEmpty((context.ParentObject.Value)))
+                    subject = (new List<string> { about, resource, href, src }).FirstNonEmptyOrDefault();
+                }
+
+                // Establish a subject if there isn't one
+                if (subject.IsNullOrEmpty())
+                {
+                    if (elementNode.XPath == HtmlHeadXPath)
+                        subject = context.ParentObject;
+                    else if (elementNode.XPath.Split('/').Length <= 2)
+                        subject = context.Base;
+                    else if (typeOf.IsNotNull() && property.IsNull())
+                        subject = GetNewBNode();
+                    else
                     {
-                        newSubject = context.ParentObject.Value;
+                        if (property.IsNullOrEmpty()) skipElement = true;
+                        subject = context.ParentSubject;
                     }
-                    if (elementNode.HasAttribute("property") && (propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(defaultVocabulary, prefixMappings)).IsNull())
-                        skipElement = true;
                 }
             }
-            else //Step 5 of the processing sequence
+            else
             {
-                var subjectValue = elementNode.GetAttributeValue(new[] { "about"});
+                // Step 6
+                // If the current element does contain a @rel or @rev attribute, then the next step is to
+                // establish both a value for new subject and a value for current object resource:
 
-                if (!string.IsNullOrEmpty(subjectValue))
+                subject = about;
+                objecto = (new List<string> { resource, href, src }).FirstNonEmptyOrDefault();
+
+
+                if (!typeOf.IsNullOrEmpty())
                 {
-                    newSubject = subjectValue;
-                }
-                /*
-                if (elementNode.GetAttribute("about").IsUriOrSafeCurie(prefixMappings).IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("about").Value;
-                }
-                else if (elementNode.GetAttribute("src").IsUri().IsNotNull())
-                {
-                    newSubject = elementNode.GetAttribute("src").Value;
-                }
-                 */
-                else if ((elementNode.Name.ToUpper() == "HEAD") || (elementNode.Name.ToUpper() == "BODY"))
-                {
-                    newSubject = "";
-                }
-                else if ((typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(defaultVocabulary, prefixMappings)).IsNotNull() && typeAttributeList.Count > 0)
-                {
-                    newSubject = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
-                }
-                else if (!string.IsNullOrEmpty(context.ParentObject.Value))
-                {
-                    newSubject = context.ParentObject.Value;
+                    if (objecto.IsNullOrEmpty() && subject.IsNullOrEmpty())
+                        objecto = GetNewBNode();
+                    typedResource = !subject.IsNullOrEmpty() ? subject : objecto;
                 }
 
-                var objectResourceValue = elementNode.GetAttributeValue(new[] { "src", "href", "resource" });
+                // FIXME: if the element is the root element of the document
+                // then act as if there is an empty @about present
+                if (subject.IsNullOrEmpty())
+                    subject = context.ParentSubject;
 
-                if (!string.IsNullOrEmpty(objectResourceValue))
-                {
-                    currentObjectResource = objectResourceValue;
-                }
+                if (!rel.IsNullOrEmpty())
+                    rels = Regex.Split(rel, @"/(?:$|^|\s+)/");
 
-                /*
-                if (elementNode.GetAttribute("resource").IsUriOrSafeCurie(prefixMappings).IsNotNull())
-                {
-                    currentObjectResource = elementNode.GetAttribute("resource").Value;
-                }
-                else if (elementNode.GetAttribute("href").IsUri().IsNotNull())
-                {
-                    currentObjectResource = elementNode.GetAttribute("href").Value;
-                }*/
+                if (!rev.IsNullOrEmpty())
+                    revs = Regex.Split(rev, @"/(?:$|^|\s+)/");
             }
 
-            // Paso 6 de la secuencia de procesamiento 
-            if (!string.IsNullOrEmpty(newSubject))
+            // FIXME: better place for this?
+            if (!typeOf.IsNullOrEmpty() && !subject.IsNullOrEmpty() && typedResource.IsNull())
+                typedResource = subject;
+
+            // Step 7: Process @typeof if there is a subject
+            if (!typedResource.IsNullOrEmpty())
             {
-                if (typeAttributeList.IsNull() || typeAttributeList.Count == 0)
-                {
-                    if (elementNode.HasAttribute("typeof"))
-                        typeAttributeList = elementNode.GetAttribute("typeof").GetCURIEs(defaultVocabulary, prefixMappings);
-                }
-                if (typeAttributeList.IsNotNull() && typeAttributeList.Count > 0)
+                var typeAttributeList = _processor.GetCURIEs(typedResource, defaultVocabulary, prefixMappings);
+
+                if (!typeAttributeList.IsEmpty() && typeAttributeList.Count > 0)
                 {
                     foreach (var item in typeAttributeList)
                     {
-                        subject = newSubject;
-                        predicate = "http://www.w3.org/1999/02/22-rdf-syntax-ns#type";
-                        objecto.Value = "[" + item.Curie + "]";
-                        objecto.Type = TripleObjectType.URIorSafeCURIE;
+                        var dto = new RDFConstructDto
+                                      {
+                                          Subject = typedResource,
+                                          Predicate = "rdf:type",
+                                          Object = item.Curie,
+                                          DataType = Constants.UriDataType,
+                                      };
 
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
+                        ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
                     }
                 }
             }
 
-            // Paso 7 de la secuencia de procesamiento
-            if (currentObjectResource != null)
+            // Step 8: Create new List mapping if the subject has changed
+            if (subject.IsNotNull() && !string.Equals(subject, context.ParentSubject))
             {
-                if (relAttributeList.Count == 0)
-                {
-                    if (elementNode.HasAttribute("rel"))
-                    {
-                        var item = elementNode.GetAttribute("rel").GetReservedWordOrCURIE(prefixMappings);
-                        if(item.IsNotNull()) relAttributeList.Add(item);
-                    }
-                }
-                if (relAttributeList.Count > 0)
-                {
-                    foreach (var item in relAttributeList)
-                    {
-                        subject = newSubject;
-                        if (!string.IsNullOrEmpty(item))
-                        {
-                            predicate = "[" + item + "]";
-                        }
-                        else
-                        {
-                            predicate = "http://www.w3.org/1999/xhtml/vocab#" + item;
-                        }
-                        objecto.Value = currentObjectResource;
-                        objecto.Type = TripleObjectType.URIorSafeCURIE;
-
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
-                    }
-                }
-                if (revAttributeList.Count == 0)
-                {
-                    if (elementNode.HasAttribute("rev"))
-                    {
-                        var item = elementNode.GetAttribute("rev").GetReservedWordOrCURIE(prefixMappings);
-                        if (item.IsNotNull()) revAttributeList.Add(item);
-                    }
-                }
-                if (revAttributeList.Count > 0)
-                {
-                    foreach (var item in revAttributeList)
-                    {
-                        objecto.Value = newSubject;
-                        objecto.Type = TripleObjectType.URIorSafeCURIE; 
-                        if (!string.IsNullOrEmpty(item))
-                        {
-                            predicate = "[" + item + "]";
-                        }
-                        else
-                        {
-                            predicate = "http://www.w3.org/1999/xhtml/vocab#" + item;
-                        }
-
-                        subject = currentObjectResource;
-
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
-                    }
-                }
+                listMapping = new Dictionary<string, IList<string>>();
+            }
+            else
+            {
+                listMapping = context.ListMapping;
             }
 
-
-            // Paso 8 de la secuencia de procesamiento 
-            if (currentObjectResource == null)
+            // Step 9: Generate triples with given object
+            if (subject.IsNotNull() && objecto.IsNotNull())
             {
-                if (relAttributeList.Count == 0)
+                foreach (var prop in rels)
                 {
-                    if (elementNode.HasAttribute("rel"))
-                        relAttributeList.Add(elementNode.GetAttribute("rel").GetReservedWordOrCURIE(prefixMappings));
-                }
-                if (relAttributeList.Count > 0)
-                {
-                    foreach (var item in relAttributeList)
+                    var dto = new RDFConstructDto
+                                  {
+                                      Subject = subject,
+                                      Predicate = prop,
+                                      Object = objecto,
+                                      DataType = Constants.UriDataType,
+                                  };
+                    if (inlist.IsNotNull())
                     {
-                        if (!string.IsNullOrEmpty(item))
-                        {
-                            localIncompleteTriples.Add(new IncompleteTriple("[" + item + "]", "forward", elementNode));
-                        }
-                        //else
-                        //{
-                        //  local_list_of_incomplete_triples.push(new incomplete_triple("http://www.w3.org/1999/xhtml/vocab#" + relAttributeList[i].reserved_word, "forward", elemento));
-                        //}
-
-                    }
-                }
-
-                if (revAttributeList.Count == 0)
-                {
-                    if (elementNode.HasAttribute("rev"))
-                        revAttributeList.Add(elementNode.GetAttribute("rev").GetReservedWordOrCURIE(prefixMappings));
-                }
-                if (revAttributeList.Count > 0)
-                {
-                    foreach (var item in revAttributeList)
-                    {
-                        if (!string.IsNullOrEmpty(item))
-                        {
-                            localIncompleteTriples.Add(new IncompleteTriple("[" + item + "]", "reverse", elementNode));
-                        }
-                        //else
-                        //{
-                        //  local_list_of_incomplete_triples.push(new incomplete_triple("http://www.w3.org/1999/xhtml/vocab#" + revAttributeList[i].reserved_word, "reverse", elemento));
-                        //}
-
-                    }
-                }
-
-                if ((elementNode.HasAttribute("rel") || elementNode.HasAttribute("rev")))
-                {
-                    /* XXX: sometimes a bnode is created without being used at any moment */
-                    currentObjectResource = "[_:" + Constants.BnodePrefix + _bnodes++ + "]";
-                    //current_object_resource.elemento = elemento;
-                }
-            }
-
-
-            // Paso 9 de la secuencia de procesamiento
-            if (propertyAttributeList.IsNull() || propertyAttributeList.Count == 0)
-            {
-                if (elementNode.HasAttribute("property") && elementNode.HasAttribute("content"))
-                    propertyAttributeList = elementNode.GetAttribute("property").GetCURIEs(defaultVocabulary, prefixMappings);
-            }
-            if (propertyAttributeList.IsNotNull() && propertyAttributeList.Count > 0)
-            {
-                // typed literal 
-                if (elementNode.HasAttribute("datatype") &&
-                   !string.IsNullOrEmpty(elementNode.GetAttribute("datatype").Value) &&
-                   elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull() &&
-                   elementNode.GetAttribute("datatype").ResolveCURIE(context.Base as string, prefixMappings) != "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
-                {
-                    if (elementNode.HasAttribute("content"))
-                    {
-                        currentObjectLiteral = elementNode.GetAttribute("content").Value;
-                        currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
+                        UpdateListMapping(listMapping, prop, objecto);
                     }
                     else
                     {
-                        currentObjectLiteral = elementNode.GetChildrenText();
-                        currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
+                        ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
                     }
                 }
-                // plain literal 
-                else if (elementNode.HasAttribute("content"))
-                {
-                    currentObjectLiteral = elementNode.GetAttribute("content").Value;
-                    currentObjectLiteralLanguage = currentLanguage;
-                }
-                else if (elementNode.IsTextNode())
-                {
-                    currentObjectLiteral = elementNode.GetChildrenText();
-                    currentObjectLiteralLanguage = currentLanguage;
-                }
-                else if (elementNode.ChildNodes.Count == 0)
-                {
-                    currentObjectLiteral = "";
-                    currentObjectLiteralLanguage = currentLanguage;
-                }
-                else if (elementNode.HasAttribute("datatype") && elementNode.GetAttribute("datatype").Value == "")
-                {
-                    currentObjectLiteral = elementNode.GetChildrenText();
-                    currentObjectLiteralLanguage = currentLanguage;
-                }
-                // XML literal 
-                else if (!elementNode.IsTextNode() &&
-                        elementNode.HasAttribute("datatype") ||
-                        elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull())
-                {
-                    currentObjectLiteral = elementNode.WriteContentTo();
-                    currentObjectLiteralDataType = "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral";
-                    recurse = false;
-                }
-                else if (!elementNode.IsTextNode() &&
-                    elementNode.HasAttribute("datatype") &&
-                        elementNode.GetAttribute("datatype").IsCurie(prefixMappings).IsNotNull() &&
-                        elementNode.GetAttribute("datatype").ResolveCURIE(context.Base, prefixMappings) == "http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral")
-                {
-                    currentObjectLiteral = elementNode.WriteContentTo(); ;
-                    currentObjectLiteralDataType = "[" + elementNode.GetAttribute("datatype").Value + "]";
-                    recurse = false;
-                }
 
-                if (currentObjectLiteral != null)
+                foreach (var prop in revs)
                 {
-                    foreach (var item in propertyAttributeList)
-                    {
-                        subject = newSubject;
-                        predicate = "[" + item.Curie + "]";
-                        objecto.Value = currentObjectLiteral;
-                        objecto.DataType = currentObjectLiteralDataType;
-                        objecto.Language = currentObjectLiteralLanguage;
-                        objecto.Type = TripleObjectType.Literal;
+                    var dto = new RDFConstructDto
+                                  {
+                                      Subject = objecto,
+                                      Predicate = prop,
+                                      Object = subject,
+                                      DataType = Constants.UriDataType,
+                                  };
 
-                        triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
-                    }
+                    ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
                 }
             }
-
-
-            //Step 10 of the processing sequence
-            if (!skipElement && !string.IsNullOrEmpty(newSubject))
+            else if ((rels.IsNotNull() && rels.Count > 0) || (revs.IsNotNull() && revs.Count > 0))
             {
-                var incompleteTriples = context.IncompleteTriples;
-
-                if (incompleteTriples.IsNotNull())
-                    foreach (var incompleteTriple in incompleteTriples)
+                // Step 10: Incomplete triples and bnode creation
+                //currentObjectResource = GetNewBNode();
+                if (rels.IsNotNull() && rels.Count > 0)
+                {
+                    if (inlist.IsNotNull())
                     {
-                        if (incompleteTriple.Direction == "forward")
+                        foreach (var prop in rels)
                         {
-                            subject = context.ParentSubject;
-                            predicate = incompleteTriple.Predicate;
-                            objecto.Value = newSubject;
-                            objecto.Type = TripleObjectType.URIorSafeCURIE;
-
-                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
-                            
-                        }
-                        else if (incompleteTriple.Direction == "reverse")
-                        {
-                            objecto.Value = context.ParentSubject;
-                            objecto.Type = TripleObjectType.URIorSafeCURIE;
-                            predicate = incompleteTriple.Predicate;
-                            subject = newSubject;
-
-                            triples.Add(ConstructTriple(subject, predicate, objecto, context.Base, defaultVocabulary, prefixMappings));
-
+                            // FIXME: add support for incomplete lists
+                            if (!listMapping.ContainsKey(prop))
+                            {
+                                listMapping.Add(prop, new List<string>());
+                            }
                         }
                     }
+                    else
+                    {
+                        incompleteRels = rels;
+                    }
+                }
+                if (revs.IsNotNull() && revs.Count > 0)
+                {
+                    incompleteRevs = revs;
+                }
             }
 
-            //Step 11 of the processing sequence
-            if (recurse)
+            // Step 11: establish current property value
+            if (subject.IsNotNull() && property.IsNotNull())
+            {
+                bool dateTime = false;
+                var dto = new RDFConstructDto();
+
+                if (dataType.IsNotNull())
+                    dataType = _processor.ResolveCURIE(dataType, context.Base, prefixMappings);
+
+                if (elementNode.Name == "data" && elementNode.HasAttribute("value"))
+                {
+                    dto.Object = elementNode.GetAttributeValue("value", null);
+                }
+                else if (elementNode.HasAttribute("datetime"))
+                {
+                    dto.Object = elementNode.GetAttributeValue("datetime", null);
+                    dateTime = true;
+                }
+                else if (dataType == "")
+                {
+                    dto.Object = elementNode.InnerText;
+                    dto.DataType = Constants.LiteralDataType;
+                }
+
+                //elseif ($datatype === self::RDF_XML_LITERAL) {
+                //    $value['value'] = '';
+                //    foreach ($node->childNodes as $child) {
+                //        $value['value'] .= $child->C14N();
+                //    }
+                //} 
+
+                else if (content.IsNotNull())
+                {
+                    dto.Object = content;
+                }
+                else if (dataType.IsNull() && rels.IsEmpty() && revs.IsEmpty())
+                {
+                    dto.Object = (new List<string> { resource, href, src }).FirstNonEmptyOrDefault();
+                    dto.DataType = Constants.UriDataType;
+                }
+
+                if (dto.IsNull() && typedResource.IsNotNull() && about.IsNull())
+                {
+                    dto.DataType = Constants.UriDataType;
+                    dto.Object = typedResource;
+                }
+
+                if (dto.Object.IsNull())
+                {
+                    dto.Object = elementNode.InnerText;
+                    dto.DataType = Constants.LiteralDataType;
+                }
+
+                if (dto.DataType.IsNull())
+                {
+                    dto.DataType = Constants.LiteralDataType;
+                    if (dataType.IsNotNull())
+                    {
+                        dto.DataType = dataType;
+                    }
+                    else if (dateTime || elementNode.Name == "time")
+                    {
+                        dto.DataType = "time";
+                    }
+
+                    if (dto.DataType.IsNull() && currentLanguage.IsNotNull())
+                    {
+                        dto.Language = currentLanguage;
+                    }
+                }
+
+                // Add each of the properties
+                IList<string> propertyAttributeList = Regex.Split(property, @"/(?:$|^|\s+)/");
+
+                foreach (var prop in propertyAttributeList)
+                {
+                    dto.Subject = subject;
+                    dto.Predicate = prop;
+                    if (inlist.IsNotNull())
+                    {
+                        UpdateListMapping(listMapping, prop, objecto);
+                    }
+                    else if (subject.IsNotNull())
+                    {
+                        ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
+                    }
+                }
+            }
+
+            // Step 12: Complete the incomplete triples from the evaluation context
+            if (!skipElement && subject.IsNotNull() && (incompleteRels.IsNotNull() || incompleteRevs.IsNotNull()))
+            {
+                foreach (var prop in incompleteRels)
+                {
+                    var dto = new RDFConstructDto()
+                                  {
+                                      Subject = context.ParentSubject,
+                                      Predicate = prop,
+                                      Object = subject,
+                                      DataType = Constants.UriDataType
+                                  };
+                    ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
+                }
+
+                foreach (var prop in incompleteRevs)
+                {
+                    var dto = new RDFConstructDto()
+                                  {
+                                      Subject = subject,
+                                      Predicate = prop,
+                                      Object = context.ParentSubject,
+                                      DataType = Constants.UriDataType
+                                  };
+
+                    ConstructTriple(context, dto, context.Base, defaultVocabulary, prefixMappings);
+                }
+            }
+
+            //Step 11  create a new evaluation context and proceed recursively
+            if (elementNode.HasChildNodes)
             {
                 for (var currentElement = elementNode.FirstChild; currentElement != null; currentElement = currentElement.NextSibling)
                 {
-                    if (skipElement)
+                    if (!skipElement)
                     {
-                        //context.Language = currentLanguage;
-                        //context.PrefixMappings = prefixMappings;
-                    }
-                    else
-                    {
-                        //nuevo_contexto = new context();
-                        // Nuevos valores del contexto de evaluación
-                        //nuevo_contexto.base = contexto.base;
-                        if (!string.IsNullOrEmpty(newSubject))
+                        if (subject.IsNotNull())
                         {
-                            context.ParentSubject = newSubject;
+                            context.ParentSubject = subject;
                         }
 
-                        if (!string.IsNullOrEmpty(currentObjectLiteral))
+                        if (objecto.IsNotNull())
                         {
-                            context.ParentObject.Literal = currentObjectLiteral;
+                            context.ParentObject = objecto;
                         }
-                        else if (newSubject != null)
+
+
+                        if (incompleteRels.IsNotNull())
                         {
-                            context.ParentObject.Value = newSubject;
+                            context.IncompleteRels = incompleteRels;
                         }
-                        else
+
+                        if (incompleteRevs.IsNotNull())
                         {
-                            //nuevo_contexto.parent_object   = contexto.parent_subject;
+                            context.IncompleteRevs = incompleteRevs;
                         }
-                        //context.PrefixMappings = prefixMappings;
-                        //nuevo_contexto.list_of_incomplete_triples = local_list_of_incomplete_triples;
-                        //context.Language = currentLanguage;
                     }
 
-                    Parse(context, currentElement, ref triples);
+                    Parse(context, currentElement);
+                }
+            }
+
+            // Step 14: create triples for lists
+            if (listMapping.IsNotNull())
+            {
+                foreach (var prop in listMapping.Keys)
+                {
+
+                    GenerateList(subject, prop, listMapping[prop]);
 
                 }
             }
         }
 
-        public string UpdateDefaultVocabulary(HtmlNode elementNode)
+        private void GenerateList(string subject, string property, IEnumerable<string> list)
         {
-            if(elementNode.HasAttribute("vocab"))
+            var current = subject;
+            var prop = property;
+
+            // Output a blank node for each item in the list
+            foreach (var item in list)
+            {
+                var newNode = GetNewBNode();
+
+                ConstructTriple(new RDFConstructDto
+                              {
+                                  Subject = current,
+                                  Predicate = prop,
+                                  Object = newNode,
+                                  DataType = Constants.BnodeDataType,
+                              });
+
+                ConstructTriple(new RDFConstructDto
+                                    {
+                                        Subject = newNode,
+                                        Predicate = "rdf:first",
+                                        Object = item
+                                    });
+                current = newNode;
+                prop = "rdf:rest";
+            }
+            // Finally, terminate the list
+            ConstructTriple(new RDFConstructDto
+                                {
+                                    Subject = current,
+                                    Predicate = prop,
+                                    Object = "rdf:nil"
+                                });
+        }
+
+        private void ConstructTriple(RDFConstructDto context)
+        {
+            
+        }
+
+        private void UpdateListMapping(IDictionary<string, IList<string>> listMapping, string prop, string objecto)
+        {
+            if (!listMapping.ContainsKey(prop))
+                listMapping.Add(prop, new List<string>());
+            listMapping[prop].Add(objecto);
+        }
+
+        private string GetNewBNode()
+        {
+            return "_:" + Constants.BnodePrefix + _bnodes++;
+        }
+
+        public string UpdateDefaultVocabulary(ParserContext context, HtmlNode elementNode, bool isRecursive = false)
+        {
+            if (elementNode.HasAttribute("vocab"))
             {
                 string vocab = elementNode.GetAttributeValue("vocab", string.Empty);
-                if (!string.IsNullOrEmpty(vocab)) return vocab;
+                if (!string.IsNullOrEmpty(vocab))
+                {
+                    if (!isRecursive)
+                    ConstructTriple(new RDFConstructDto
+                                        {
+                                            Subject = context.Base,
+                                            Predicate = "rdfa:usesVocabulary",
+                                            Object = vocab,
+                                            DataType = Constants.UriDataType,
+                                        });
+                    return vocab;
+                }
             }
-            else if(elementNode.ParentNode != null)
+            else if (elementNode.ParentNode != null)
             {
-                return UpdateDefaultVocabulary(elementNode.ParentNode);
+                return UpdateDefaultVocabulary(context, elementNode.ParentNode, true);
             }
 
             return null;
@@ -522,12 +535,37 @@ namespace sharpRDFa
             var baseURI = GetBaseURI(document);
             parserContext.Base = baseURI;
             parserContext.ParentSubject = baseURI;
-            parserContext.ParentObject = new ObjectNode();
+            parserContext.ParentObject = null;
             parserContext.PrefixMappings = GetDocNamespaces(document);
-            parserContext.IncompleteTriples = new List<IncompleteTriple>();
+            parserContext.Terms = GetDefaultTerms();
+            parserContext.IncompleteRels = new List<string>();
+            parserContext.IncompleteRevs = new List<string>();
             parserContext.Language = null;
+            parserContext.ConstructedTiples = new List<RDFTriple>();
+            parserContext.ListMapping = new Dictionary<string, IList<string>>();
+
+            // Set the default prefix
+            SetDefaultPrefix(parserContext);
 
             return parserContext;
+        }
+
+        private void SetDefaultPrefix(ParserContext context)
+        {
+            context.PrefixMappings.Add(Constants.DefaultPrefix, "http://www.w3.org/1999/xhtml/vocab#");
+        }
+
+        private IDictionary<string, string> GetDefaultTerms()
+        {
+            // RDFa 1.1 default term mapping
+            var terms = new Dictionary<string, string>
+                            {
+                                {"describedby", "http://www.w3.org/2007/05/powder-s#describedby"},
+                                {"license", "http://www.w3.org/1999/xhtml/vocab#license"},
+                                {"role", "http://www.w3.org/1999/xhtml/vocab#role"}
+                            };
+
+            return terms;
         }
 
         public IDictionary<string, string> GetDocNamespaces(HtmlDocument document)
@@ -537,7 +575,7 @@ namespace sharpRDFa
             foreach (var source in rootElement.GetNameSpaceMappings())
             {
                 if (!mappings.ContainsKey(source.Key))
-                    mappings.Add(source.Key, source.Value);        
+                    mappings.Add(source.Key, source.Value);
             }
             return mappings;
         }
@@ -548,13 +586,15 @@ namespace sharpRDFa
             if (rootElement.IsNull()) return string.Empty;
 
             string baseURI = null;
-            var xpaths = new[]{"//html", "//head", "//base"};
+            var xpaths = new[] { "//html", "//head", "//base" };
 
             foreach (var xpath in xpaths)
             {
                 baseURI = rootElement.GetXPATHAttributeValue(xpath, "href");
                 if (!string.IsNullOrEmpty(baseURI)) return baseURI;
             }
+
+            if (string.IsNullOrEmpty(baseURI)) baseURI = GetNewBNode();
 
             return baseURI;
         }
@@ -565,12 +605,12 @@ namespace sharpRDFa
         }
 
         public IDictionary<string, string> UpdatePrefixMappings(ParserContext context, HtmlNode elementNode)
-        {      
-            if(elementNode.HasAttribute("prefix"))
+        {
+            if (elementNode.HasAttribute(Constants.Prefix_RDFaAttribute))
             {
                 var mappings = new Dictionary<string, string>(context.PrefixMappings);
 
-                string[] splits = Regex.Split(elementNode.GetAttribute("prefix").Value, "\\s+");
+                string[] splits = Regex.Split(elementNode.GetAttribute(Constants.Prefix_RDFaAttribute).Value, "\\s+");
                 int i = 0;
                 while (i < splits.Length)
                 {
@@ -589,7 +629,7 @@ namespace sharpRDFa
                     i += 2;
                 }
 
-                if(mappings.Count > context.PrefixMappings.Count)
+                if (mappings.Count > context.PrefixMappings.Count)
                     context.PrefixMappings = mappings;
 
             }
@@ -599,17 +639,18 @@ namespace sharpRDFa
         private bool ShouldParse(HtmlNode elementNode)
         {
             if (elementNode.IsNull() || !elementNode.NodeType.Equals(HtmlNodeType.Element)) return false;
-            if (elementNode.Name.ToUpper() == "SCRIPT") return false;
+            //Console.WriteLine(elementNode.XPath);
             return true;
         }
 
-        private RDFTriple ConstructTriple(string subject, string predicate, ObjectNode objectNode, string baseURL, string vocabulary, IDictionary<string, string> uriMappings)
+        private void ConstructTriple(ParserContext context, RDFConstructDto dto, string baseURL, string vocabulary, IDictionary<string, string> uriMappings)
         {
             IRDFTripleBuilder builder = new RDFTripleBuilder();
-            builder.CreateSubject(subject, baseURL, vocabulary, uriMappings);
-            builder.CreatePredicate(predicate, baseURL, vocabulary, uriMappings);
-            builder.CreateObject(objectNode.Value, objectNode.Language, objectNode.DataType, objectNode.Type, baseURL, vocabulary, uriMappings);
-            return builder.GetTriple();
+            //IRDFTripleBuilder builder = new RDFTripleBuilderNoValidation();
+            builder.CreateSubject(dto.Subject, baseURL, vocabulary, uriMappings);
+            builder.CreatePredicate(dto.Predicate, baseURL, vocabulary, uriMappings);
+            builder.CreateObject(dto.Object, dto.Language, dto.DataType, baseURL, vocabulary, uriMappings);
+            context.ConstructedTiples.Add(builder.GetTriple());
         }
     }
 }

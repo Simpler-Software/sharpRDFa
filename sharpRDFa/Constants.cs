@@ -192,8 +192,13 @@ namespace sharpRDFa
 
         public const string UriDataType = "Uri";
         public const string LiteralDataType = "Literal";
+        public const string BnodeDataType = "bnode";
+
 
         public const string BnodePrefix = "rdfadevBnode";
-        public const string EmptyBnodePrefix = "rdfadevBnodeEmpty";       
+        public const string EmptyBnodePrefix = "rdfadevBnodeEmpty";
+
+        public static string DefaultPrefix = "DefaultPrefix";
+
     }
 }

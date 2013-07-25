@@ -26,5 +26,18 @@ namespace sharpRDFa.Tests
             // Assert
             Assert.AreEqual("http://example.com/", result);
         }
+
+        [Test]
+        public void GetAttributeValue_ElementWithNoMatchingAttribute_ReturnsNull()
+        {
+            // Arrange
+            var element = _testContext.GetRootElement("Resource\\alice-example.html");
+
+            // Act
+            var result = element.GetAttributeValue(new[]{"not_existing_attrib_name"});
+
+            // Assert
+            Assert.IsNull(result);
+        } 
     }
 }

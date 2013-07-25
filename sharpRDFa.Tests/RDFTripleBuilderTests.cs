@@ -63,7 +63,7 @@ namespace sharpRDFa.Tests
                                    {"xsd","http://www.w3.org/2001/XMLSchema#"}
                                };
             // Act
-            builder.CreateObject("Jonathan Doe", "en", null, TripleObjectType.Literal, "http://example.org/john-d/", null, uriMappings);
+            builder.CreateObject("Jonathan Doe", "en", Constants.LiteralDataType, "http://example.org/john-d/", null, uriMappings);
 
             var result = builder.GetTriple();
 
@@ -85,7 +85,7 @@ namespace sharpRDFa.Tests
                                    {"xsd","http://www.w3.org/2001/XMLSchema#"}
                                };
             // Act
-            builder.CreateObject("http://example.org/john-d/#me", null, null, TripleObjectType.URIorSafeCURIE, "http://example.org/john-d/", null, uriMappings);
+            builder.CreateObject("http://example.org/john-d/#me", null, Constants.UriDataType, "http://example.org/john-d/", null, uriMappings);
 
             var result = builder.GetTriple();
 

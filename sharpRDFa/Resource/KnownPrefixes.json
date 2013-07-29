@@ -45,7 +45,6 @@
   "rel": "http:\/\/purl.org\/vocab\/relationship\/",
   "cc": "http:\/\/creativecommons.org\/ns#",
   "dcmit": "http:\/\/purl.org\/dc\/dcmitype\/",
-  "http": "http:\/\/www.w3.org\/2006\/http#",
   "og": "http:\/\/opengraphprotocol.org\/schema\/",
   "factbook": "http:\/\/www4.wiwiss.fu-berlin.de\/factbook\/ns#",
   "vann": "http:\/\/purl.org\/vocab\/vann\/",

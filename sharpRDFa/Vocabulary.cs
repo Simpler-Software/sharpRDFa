@@ -7,7 +7,7 @@ namespace sharpRDFa
 {
     public class Vocabulary
     {
-        private const string PrefixFilePath = "Resource\\all.file.json";
+        private const string PrefixFilePath = "Resource\\KnownPrefixes.json";
         private IDictionary<string, string> _knownPrefixes;
 
         private static Vocabulary _instance;

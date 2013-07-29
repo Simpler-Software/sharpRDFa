@@ -1,5 +1,7 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using NUnit.Framework;
 
 namespace sharpRDFa.Tests
@@ -130,11 +132,13 @@ namespace sharpRDFa.Tests
         {
             var parser = new RDFaParser();
             var triples = parser.ParseRDFTriplesFromFile("Resource\\alice-example.html");
-
+            var builder = new StringBuilder();
             foreach (var rdfTriple in triples)
             {
-                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+                builder.AppendLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
             }
+            //File.WriteAllText("out\\out.put", builder.ToString());
+            Console.Write(builder.ToString());
         }
         
         [Test]

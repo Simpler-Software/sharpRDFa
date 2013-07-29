@@ -24,5 +24,6 @@ namespace sharpRDFa.Processing
 
         string ExpandCurie(IDictionary<string, string> prefixMappings, string vocab, string value);
         string ResolveURI(IDictionary<string, string> prefixMappings, string vocab, IDictionary<string, string> terms, string value);
+        IList<string> ProcessUriList(string typedResource, string defaultVocabulary, IDictionary<string, string> prefixMappings);
     }
 }

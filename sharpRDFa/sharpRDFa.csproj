@@ -83,7 +83,7 @@
     <Compile Include="Vocabulary.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resource\all.file.json">
+    <EmbeddedResource Include="Resource\KnownPrefixes.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resource\CommonResource.resx">

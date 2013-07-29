@@ -114,20 +114,24 @@ namespace sharpRDFa.Processing
             {
                 var result = new URI { Uri = regExResult[0] };
 
-                if (regExResult.Count > 1)
-                    result.Scheme = regExResult[1];
-
-                if (regExResult.Count > 2)
-                    result.Authority = regExResult[2];
-
-                if (regExResult.Count > 3)
-                    result.Path = regExResult[3];
-
-                //if (regExResult.Count > 4)
-                //    result.Query = regExResult[4];
-
-                if (regExResult.Count > 4)
-                    result.Fragment = regExResult[4];
+                switch (regExResult.Count)
+                {
+                    case 2 :
+                        if (regExResult[0].StartsWith("#")) result.Fragment = regExResult[1];
+                        else result.Path = regExResult[1];
+                        break;
+                    case 4:
+                        result.Scheme = regExResult[1];
+                        result.Authority = regExResult[2];
+                        result.Path = regExResult[3];
+                        break; 
+                    case 5:
+                        result.Scheme = regExResult[1];
+                        result.Authority = regExResult[2];
+                        result.Path = regExResult[3];
+                        result.Fragment = regExResult[4];
+                        break;
+                }
 
                 return result;
             }
@@ -296,6 +300,9 @@ namespace sharpRDFa.Processing
 
             if (parsedURI != null && parsedBaseURI != null)
             {
+                if (parsedURI.Scheme == null && parsedURI.Authority == null && parsedURI.Path == null && parsedURI.Query == null && parsedURI.Fragment == null)
+                    return parsedURI.Uri;
+
                 if (parsedURI.Scheme == parsedBaseURI.Scheme)
                     parsedURI.Scheme = null;
 
@@ -320,28 +327,23 @@ namespace sharpRDFa.Processing
                     }
                     else
                     {
-                        if (parsedURI.Path == "")
+                        if (parsedURI.Path != null)
                         {
-                            path = parsedBaseURI.Path;
+                            path = parsedURI.Path;
                             query = !string.IsNullOrEmpty(parsedURI.Query) ? parsedURI.Query : parsedBaseURI.Query;
                         }
                         else
                         {
-                            if (parsedURI.Path.ToCharArray()[0] == '/')
-                            {
-                                path = RemoveDotSegments(parsedURI.Path);
-                            }
-                            else
-                            {
-                                path = MergePaths(parsedBaseURI.Path, parsedURI.Path);
-                                path = RemoveDotSegments(path);
-                            }
-                            query = parsedURI.Query;
+                            path = parsedBaseURI.Path;
+                            query = parsedBaseURI.Query;
                         }
+
                         authority = parsedBaseURI.Authority;
                     }
+
                     scheme = parsedBaseURI.Scheme;
                 }
+
                 string fragment = parsedURI.Fragment;
 
                 return RecomposeURIComponents(scheme, authority, path, query, fragment);
@@ -386,6 +388,7 @@ namespace sharpRDFa.Processing
             return null;
         }
 
+        // todo need to rewrite this method
         public string ResolveURI(IDictionary<string, string> prefixMappings, string vocab, IDictionary<string, string> terms, string value)
         {
             if (Regex.IsMatch(value, SafeCurieRegexp))
@@ -400,15 +403,15 @@ namespace sharpRDFa.Processing
                 if(terms.IsNotNull() && terms.ContainsKey(value)) return terms[value];
                 return prefixMappings[Constants.DefaultPrefix] + value;
             }
-            else if(string.Equals(value.Substring(0, 2), "_:"))
+            if(string.Equals(value.Substring(0, 2), "_:"))
             {
                 return null;
             }
             else
             {
                 string uri = ExpandCurie(prefixMappings, vocab, value);
-                if(!uri.IsNullOrEmpty()) return uri;
-                
+                if (!uri.IsNullOrEmpty()) return uri;
+
                 // todo
                 /*else {
                 $parsed = new EasyRdf_ParsedUri($value);
@@ -422,8 +425,22 @@ namespace sharpRDFa.Processing
                 }
                 }*/
             }
-          
-            return null;
+
+            return value;
+        }
+
+        public IList<string> ProcessUriList(string typedResource, string defaultVocabulary, IDictionary<string, string> prefixMappings)
+        {
+            var result = new List<string>();
+            if (typedResource.IsNullOrEmpty()) return result;
+            var items = Regex.Split(typedResource, "\\s+");
+            foreach(var item in items)
+            {
+                var uri = ResolveURI(prefixMappings, defaultVocabulary, null, item);
+                if(!uri.IsNullOrEmpty()) result.Add(uri);
+            }
+
+            return result;
         }
 
         private static string RecomposeURIComponents(string scheme, string authority, string path, string query, string fragment)
@@ -449,16 +466,6 @@ namespace sharpRDFa.Processing
                 result = result + "#" + fragment;
 
             return result;
-        }
-
-        private static string MergePaths(string path1, string path2)
-        {
-            if (path1 == "")
-            {
-                return "/" + path2;
-            }
-
-            return Regex.Replace(path1, @"/[^\/]*$/", "") + path2;
         }
 
         private static string RemoveDotSegments(string path)

@@ -16,11 +16,11 @@ namespace sharpRDFa.Tests
         {
             var parser = new RDFaParser();
             var writer = new RDFWriter();
-            var triples = parser.ParseRDFTriplesFromFile("Resource\\HTML_5_RDFa_1_1.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\alice-example.html");
             if (File.Exists("sample.rdf"))
                 File.Delete("sample.rdf");
-            writer.WriteToXML(triples, "sample.rdf");
-            Assert.IsTrue(File.Exists("sample.rdf"));
+            writer.WriteToXML(triples, "out\\sample.rdf");
+            Assert.IsTrue(File.Exists("out\\sample.rdf"));
         }
         
         [Test]
@@ -28,12 +28,12 @@ namespace sharpRDFa.Tests
         {
             var parser = new RDFaParser();
             var writer = new RDFWriter();
-            var triples = parser.ParseRDFTriplesFromFile("Resource\\HTML_5_RDFa_1_1.html");
+            var triples = parser.ParseRDFTriplesFromFile("Resource\\alice-example.html");
 
             if (File.Exists("sample.nt"))
                 File.Delete("sample.nt");
-            writer.WriteToXML(triples, "sample.nt");
-            Assert.IsTrue(File.Exists("sample.nt"));
+            writer.WriteToXML(triples, "out\\sample.nt");
+            Assert.IsTrue(File.Exists("out\\sample.nt"));
         }
     }
 }

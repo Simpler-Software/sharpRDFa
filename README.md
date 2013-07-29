@@ -32,25 +32,34 @@ Sample Input File (HTML5_RDFa_1.1.html)
 </html>
 ```
 
+Parse RDFa from a file
 
 ```csharp
 var parser = new RDFaParser();
 var triples = parser.ParseRDFTriplesFromFile("Resource\\HTML5_RDFa_1.1.html");
+foreach (var rdfTriple in triples)
+{
+	Console.WriteLine(string.Format("<{0}> <{1}> <{2}>", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+}
 ```
 
-Result
+Console output
 
-http://example.org/john-d/ http://purl.org/dc/elements/1.1/creator Jonathan Doe
-http://example.org/john-d/ http://xmlns.com/foaf/0.1/primaryTopic http://example.org/john-d/#me
-http://example.org/john-d/#me http://xmlns.com/foaf/0.1/nick John D
-http://example.org/john-d/#me http://xmlns.com/foaf/0.1/interest http://www.neubauten.org/
-http://example.org/john-d/#me http://xmlns.com/foaf/0.1/interest urn:ISBN:0752820907
-urn:ISBN:0752820907 http://purl.org/dc/elements/1.1/title Weaving the Web
-urn:ISBN:0752820907 http://purl.org/dc/elements/1.1/creator Tim Berners-Lee
-
+```
+<http://example.org/john-d/> <http://purl.org/dc/elements/1.1/creator> <Jonathan Doe>
+<http://example.org/john-d/> <http://xmlns.com/foaf/0.1/primaryTopic> <http://example.org/john-d/#me>
+<http://example.org/john-d/#me> <http://xmlns.com/foaf/0.1/nick> <John D>
+<http://example.org/john-d/#me> <http://xmlns.com/foaf/0.1/interest> <http://www.neubauten.org/>
+<http://example.org/john-d/#me> <http://xmlns.com/foaf/0.1/interest> <urn:ISBN:0752820907>
+<urn:ISBN:0752820907> <http://purl.org/dc/elements/1.1/title> <Weaving the Web>
+<urn:ISBN:0752820907> <http://purl.org/dc/elements/1.1/creator> <Tim Berners-Lee>
+```
 
 ### Features
-Extensive unit tests written using NUnit
+* Support Parse from file and parse from file
+* Parser out put can be save in NTriples fromat and RDF xml format
+* Extensive unit tests written using NUnit test framework
+
 
 ### Requirements
 .Net 4.0 or newer
@@ -59,5 +68,5 @@ Extensive unit tests written using NUnit
 The sharpRDFa library and tests are licensed under the BSD-3-Clause license.
 
 ### Specifications
-Syntax and processing rules for embedding RDF through attributes - http://www.w3.org/TR/rdfa-core/
-Rich Structured Data Markup for Web Documents - http://www.w3.org/TR/rdfa-primer/
+* Syntax and processing rules for embedding RDF through attributes - http://www.w3.org/TR/rdfa-core/
+* Rich Structured Data Markup for Web Documents - http://www.w3.org/TR/rdfa-primer/

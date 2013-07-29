@@ -68,7 +68,7 @@ namespace sharpRDFa.Tests
 
             foreach (var rdfTriple in triples)
             {
-                Console.WriteLine(string.Format("{0} {1} {2}", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
+                Console.WriteLine(string.Format("<{0}> <{1}> <{2}>", rdfTriple.Subject, rdfTriple.Predicate, rdfTriple.Objecto));
             }
 
             Assert.IsNotNull(triples);

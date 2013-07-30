@@ -56,13 +56,13 @@ Console output
 ```
 
 ### Features
-* Support Parse from file and parse from file
-* Parser out put can be save in NTriples fromat and RDF xml format
-* Extensive unit tests written using NUnit test framework
+* Support Parse from url and parse from file
+* Parser out put can be saved in NTriples fromat and RDF xml format
+* Extensive unit tests were written using NUnit test framework
 
 
 ### Requirements
-.Net 4.0 or newer
+.Net Framework 4.0 or newer
 
 ### Licensing
 The sharpRDFa library and tests are licensed under the BSD-3-Clause license.
